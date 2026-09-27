@@ -2,8 +2,17 @@
 
 \subsection{Techninės įrangos komponentai}
 
-
-
 \begin{description}
- aaaa
+\item[Procesorius] gali dirbti dviem režimais – supervizoriaus arba vartotojo. Naudotojo rėžime vykdomos virtualios mašinos komandos, o supervizoriaus rėžime – operacinės sistemos. Laiko tarpas, kurį procesorius atlieka vieną komandą laikomas vienu laiko vienetu. Procesorius turi šiuos registrus:
+    \begin{description}
+        \item[$IC$] 2 baitų nuorodos registras. Skirtas nurodyti vykdomos 
+        virtualios mašinos komandos adresą atmintyje.
+        \item[$R1$] 4 baitų bendro naudojimo registras.
+        \item[$R2$] 4 baitų bendro naudojimo registras.
+        \item[$SF$] 2 baitų loginis registras, saugomi aritmetinių ir loginių operacijų suformuoti požymiai.
+        \item[$MODE$] 1 baito loginis registras, kurio reikšmė nusako 
+        procesoriaus darbo rėžimą („N“ – naudotojas, „S“ – supervizorius).
+    \end{description}
 \end{description}
+
+        
