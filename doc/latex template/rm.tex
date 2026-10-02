@@ -5,18 +5,18 @@
 \begin{description}
 \item[Procesorius] gali dirbti dviem režimais – supervizoriaus arba vartotojo. Naudotojo rėžime vykdomos virtualios mašinos komandos, o supervizoriaus rėžime – operacinės sistemos. Laiko tarpas, kurį procesorius atlieka vieną komandą laikomas vienu laiko vienetu. Procesorius turi šiuos registrus:
     \begin{description}
-        \item[$IC$] - 2 baitų nuorodos registras. Skirtas nurodyti vykdomos virtualios mašinos komandos adresą atmintyje.
-        \item[$R1$] - 4 baitų bendro naudojimo registras.
-        \item[$R2$] - 4 baitų bendro naudojimo registras.
-        \item[$SF$] - 2 baitų loginis registras, saugomi aritmetinių ir loginių operacijų suformuoti požymiai.
-        \item[$MODE$] - 1 baito loginis registras, kurio reikšmė nusako procesoriaus darbo rėžimą („N“ – naudotojas, „S“ – supervizorius).
-        \item[$PLR$] - 2 baitų registras nurodyti puslapių lentelės bloko adresą.
-        \item[$PLBR$] - 2 baitų registras skirtas nurodyti puslapių lentelės pirmojo baito vietą PLR bloke.
-        \item[$PI$] - 1 baito registras programiniams petraukiamams fiksuoti.
-        \item[$SI$] - 1 baito registras supervizoriniams pertraukimams fiksuoti.
-        \item[$TI$] - 1 baito taimerio registras.
-        \item[$IOI$] - 1 baito įvedimo ir išvedimo petraukimų registras.
-        \item[$CHST$] - 1 baito kanalų užimtumo registras.
+        \item[IC] - 2 baitų nuorodos registras. Skirtas nurodyti vykdomos virtualios mašinos komandos adresą atmintyje.
+        \item[R1] - 4 baitų bendro naudojimo registras.
+        \item[R2] - 4 baitų bendro naudojimo registras.
+        \item[SF] - 2 baitų loginis registras, saugomi aritmetinių ir loginių operacijų suformuoti požymiai.
+        \item[MODE] - 1 baito loginis registras, kurio reikšmė nusako procesoriaus darbo rėžimą („N“ – naudotojas, „S“ – supervizorius).
+        \item[PLR] - 2 baitų registras nurodyti puslapių lentelės bloko adresą.
+        \item[PLBR] - 2 baitų registras skirtas nurodyti puslapių lentelės pirmojo baito vietą PLR bloke.
+        \item[PI] - 1 baito registras programiniams petraukiamams fiksuoti.
+        \item[SI] - 1 baito registras supervizoriniams pertraukimams fiksuoti.
+        \item[TI] - 1 baito taimerio registras.
+        \item[IOI] - 1 baito įvedimo ir išvedimo petraukimų registras.
+        \item[CHST] - 1 baito kanalų užimtumo registras.
     \end{description}
 \end{description}
 
@@ -67,9 +67,38 @@ Esant situacijai SI = 0 ir PI = 0 ir TI <> 0, pertraukimų sistema neaptiks. Per
 Nustačius įvykusį pertraukimą (t.y. test() <> 0) virtualios mašinos procesoriaus registrų reikšmės yra išsaugomos, procesorius perjungiamas į supervizoriaus režimą, nustatomas pertraukimo pobūdis (pavyzdžiui tiesiogiai apklausiant registrus) ir kviečiama pertraukimą apdorosianti paprogramė. Vėliau valdymas grįžta į virtualią mašiną, registrai atstatomi, procesorius perjungiamas į vartotojo režimą, ir operacinė sistema sprendžia, ką daryti toliau.
 \end{description}
 
+\begin{description}
+\item[Kanalų įrenginys] Kanalų įrenginio registrai:
+    \begin{description}
+    \item[SB] Takelio, iš kurio kopijuosime numeris.
+    \item[DB] Takelio, į kurį kopijuosime numeris
+    \item[ST] Objekto, iš kurio kopijuosime, numeris
+        \begin{enumerate}
+            \item Vartotojo atmintis;
+            \item Supervizorinė atmintis;
+            \item Išorinė atmintis;
+            \item Įvedimo srautas;
+        \end{enumerate}
+        \item[DT] Objekto, į kurį kopijuosime, numeris
+        \begin{enumerate}
+            \item Vartotojo atmintis;
+            \item Supervizorinė atmintis;
+            \item Išorinė atmintis;
+            \item Įvedimo srautas;
+        \end{enumerate}
+    \end{description}
+Kartu kanalų įrenginys turi komandą XCHG, tačiau neturi procesoriaus, kuris galėtų ją įvykdyti. Šią komandą vykdo centrinis procesorius, taigi, šis kanalų įrenginys nėra lygiagrečiai su centriniu procesoriumi veikianti aparatūra. Procesas, norėdamas pasinaudoti kanalų įrenginiu, turi nustatyti kanalų įrenginio
+registrus ir tada įvykdyti komandą XCHG. 
+\end{description}
+    
+\begin{description}
+        \item[Įvedimo/Išvedimo įrenginiai] \ 
+    \begin{description}
+        \item[Įvedimo įrenginiai] - klaviatūra per kurią įrašome komandas.
+        \item[Išvedimo įrenginiai] - kompiuterio vaizduoklis.
+    \end{description}
+\end{description}
 
-
-\item{Įvedimo įrenginiai}
 
 \begin{figure}[H]
         \centering
