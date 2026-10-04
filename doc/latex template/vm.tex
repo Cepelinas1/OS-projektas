@@ -25,24 +25,61 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
 \end{description}
 
 \begin{description}
-    \item[Procesoriaus instrukcijos] \ 
+    \item[Komandų sistema] \ 
     \begin{description}
         \item[L1xy] - atminties ląstelės, kurios adresas xy (šešioliktainis skaičius) turinio kopijavimas į registrą R1. Trumpiau: $R1:= [x*16 + y]$
         \item[L2xy] - atminties ląstelės, kurios adresas xy (šešioliktainis skaičius) turinio kopijavimas į registrą R2. Trumpiau: $R2:= [x*16 + y]$
+        
         \item[K1xy] - registro R1 reikšmė įrašoma į atminties ląstelę, kurios adresas xy (šešioliktainis skaičius). Trumpiau $[x*16 + y]:= R1$ %K - keep
         \item[K2xy] - registro R2 reikšmė įrašoma į atminties ląstelę, kurios adresas xy (šešioliktainis skaičius). Trumpiau $[x*16 + y]:= R2$
-        \item[C1xy] - į registrą R1 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R1:= [x*16 + y]$
-        \item[C2xy] - į registrą R2 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R2:= [x*16 + y]$
-        \item[A1xy] Prie registro R1 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 + [x*16 + y]$.
-        \item[A2xy] Prie registro R2 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= [x*16 + y]$.
-        \item[ADD1] Prie registro R1 reikšmės pridedama registro R2 reikšmė. Formuoja SF požymius.Trumpiau $R1:= R1 + R2$.
-        \item[ADD2] Prie registro R2 reikšmės pridedama registro R1 reikšmė. Formuoja SF požymius.Trumpiau $R2:= R1 + R2$.
-        \item[ADxy] Sudedamos registrų R1 ir R2 reikšmės bei rezultatas išsaugojamas atminties ląstelėje, kurios adresas xy
-        (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $[x*16 + y]:= R1 + R2$
-        \item[S1xy] Iš registro R1 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 - [x*16 + y]$.
-        \item[S2xy] Iš registro R2 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= R2 - [x*16 + y]$.
-        \item[SUB1] Iš registro R1 reikšmės atimama registro R2 reikšmė. Formuoja SF požymius.Trumpiau $R1:= R1 - R2$.
-        \item[SUB2] Iš registro R2 reikšmės atimama registro R1 reikšmė. Formuoja SF požymius.Trumpiau $R2:= R2 - R1$.
+        
+        \item[C1xy] - į registrą R1 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R1:= xy$
+        \item[C2xy] - į registrą R2 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R2:= xy$
+        
+        \item[A1xy] prie registro R1 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 + [x*16 + y]$.
+        \item[A2xy] prie registro R2 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= [x*16 + y]$.
+        
+        \item[ADD1] prie registro R1 reikšmės pridedama registro R2 reikšmė. Formuoja SF požymius.Trumpiau $R1:= R1 + R2$.
+        \item[ADD2] prie registro R2 reikšmės pridedama registro R1 reikšmė. Formuoja SF požymius.Trumpiau $R2:= R1 + R2$.
+        \item[ADxy] sudedamos registrų R1 ir R2 reikšmės bei rezultatas išsaugojamas atminties ląstelėje, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $[x*16 + y]:= R1 + R2$
+        
+        \item[S1xy] iš registro R1 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 - [x*16 + y]$.
+        \item[S2xy] iš registro R2 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= R2 - [x*16 + y]$.
+        
+        \item[SUB1] iš registro R1 reikšmės atimama registro R2 reikšmė. Formuoja SF požymius. Trumpiau $R1:= R1 - R2$.
+        \item[SUB2] iš registro R2 reikšmės atimama registro R1 reikšmė. Formuoja SF požymius. Trumpiau $R2:= R2 - R1$.
+
+        \item[MUL1] registro R1 reikšmė padauginama iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 * R2$.
+        \item[MUL2] registro R2 reikšmė padauginama iš registro R1 reiškmė. Formuoja SF požymius. Trumpiau $R2:= R1 * R2$.
+        \item[MLxy] sudauginamos registrų R1 ir R2 reikšmės bei rezultatas išsaugojamas atminties ląstelėje, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $[x*16 + y]:= R1 * R2$
+
+        \item[DIV1] registro R1 reiškmė padalinima iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 / R2$.
+        \item[DIV2] registro R2 reiškmė padalinima iš registro R1 reikšmės. Formuoja SF požymius. Trumpiau $R2:= R2 / R1$.
+
+        \item[COMP] Palygina registrus R1 ir R2. Formuoja SF požymius. ($R1 > R2$, tai ZF = 0 ir SF = 0; $R1 = R2$, tai ZF = 1; $R1 < R2$, tai ZF = 0 ir SF = 1)
+
+        \item[JPxy] valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+
+        \item[J1xy] jei ZF = 1 (lygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
+        \item[J0xy] jei ZF = 0 (nelygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+
+        \item[JAxy] jei ZF = 0 ir SF = 0, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
+        \item[JBxy] jei SF = 1 (nelygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+
+        \item[JCxy] jei CF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
+        \item[JOxy] jei OF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+
+        \item[PDxy] blokas atmintyje su adresu xy rašomas į failą, kurio numeris registre R1.
+        \item[GDxy] iš failo, kurio numeris registre R1, rašomas blokas į atmintį adresu xy.
+        \item[FMxy] pozicija faile nustatoma į adresą xy.
+        
+        \item[FOxy] atidaromas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius). Failo numeris išsaugomas R1.
+        \item[FCLR] uždaromas failas, kurio numeris registre R1.
+        \item[FDxy] ištrinamas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius). Failo numeris išsaugomas R1.
+        \item[FDLR] ištrinamas failas, kurio numeris registre R1.
+
+        \item[HALT] baigia vykdyti programą.
+        
     \end{description}
 \end{description}
 
@@ -53,8 +90,45 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
     \end{description}
 \end{description}
 
-\begin{description}
-    \item[Virtualios mašinos bendravimo su įvedimo/išvedimo įrenginiais mechanizmo aprašymas]
-Virtualiai mašinai įvedimo ir išvedimo įrenginiai atrodo lygiai taip pat, kaip
-paprasti failai, esantys išorinėje atmintyje.
-\end{description}
+\subsection{Virtualios mašinos bendravimo su įvedimo/išvedimo įrenginiais mechanizmo aprašymas}
+Virtuali mašina tiesiogiai su įvedimo/išvedimo įrenginiais nebendrauja.
+Duomenų perdavimui naudojamos komandos $GDxy$ ir $PDxy$. Failo numeris
+nurodomas registre $R1$, o $xy$ nurodo virtualios atminties bloko adresą.
+
+Vykdant komandą $GDxy$ suformuojamas supervizorinis pertraukimas
+$SI=1$, o vykdant $PDxy$ -- $SI=2$. Gavusi pertraukimą operacinė sistema
+perjungia procesorių į supervizoriaus režimą ir, naudodama kanalų
+įrenginį, atlieka duomenų perdavimą.
+
+Komanda $GDxy$ nuskaito duomenų bloką iš failo į virtualios mašinos
+atmintį, o $PDxy$ perduoda virtualios mašinos atminties bloką į failą.
+Baigus įvedimo/išvedimo operaciją, valdymas grąžinamas virtualiai mašinai.
+
+\subsection{Virtualios mašinos interpretuojamojo vykdomojo failo išeities 
+teksto formatas}
+
+Virtualios mašinos programą sudaro komandų ir duomenų dalys. Kiekviena
+komanda rašoma atskiroje eilutėje. Komandą sudaro operacijos kodas ir,
+jei komandai reikalingas operandas, jo reikšmė. Atminties adresai ir
+konstantos nurodomi šešioliktainiais skaičiais.
+
+Programos komandos įkeliamos į virtualios mašinos kodo sritį, o pradinės
+duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje $IC$
+registras nurodo pirmosios vykdomos komandos adresą.
+
+\subsection{Modeliuojamos virtualios mašinos loginių komponentų sąryšio su 
+realios mašinos techninės įrangos komponentais aprašymas}
+
+Virtuali mašina savo komandų vykdymui naudoja realios mašinos procesorių.
+Vienintelis skirtumas yra tai, kad jai neleidžiama pasiekti, kai kurių
+jai nereikalingų registrų. Taip pat virtuali mašina mato tik jai skirtą
+visos naudotojo atminties dalį bei gali pasiekti tik tuos failus, kurie
+yra jai paskirti.
+
+\section{Virtuali mašina operacinės sistemos kontekste}
+
+Virtuali mašina yra mašina skirta baigtinių naudotojo programų vykdymui. Ji
+yra supaprastintas, tuo pačiu ir apribotas realios mašinos modelis. 
+Operacinės sistemos paskirtis yra pasirūpinti virtualių mašinų inicijavimu,
+resursų tarp jų skirstymu bei baigusių vykdyti programas mašinų 
+sunaikinimu.
