@@ -78,6 +78,9 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
         \item[FDxy] ištrinamas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius).
         \item[FDLR] ištrinamas failas, kurio numeris registre R1.
 
+        \item[INxy] iš įvedimo įrenginio nuskaitoma reikšmė ir įrašoma į atmintį adresu xy (šešioliktainis skaičius).
+        \item[OUxy] iš atminties adresu xy (šešioliktainis skaičius) paimama reikšmė ir išvedama į išvedimo įrenginį.
+
         \item[HALT] baigia vykdyti programą.
         
     \end{description}
@@ -91,22 +94,22 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
 \end{description}
 
 \begin{description}
-\item[Virtualios mašinos bendravimas su įvedimo/išvedimo įrenginiais]
+\item[Virtualios mašinos bendravimas su įvedimo/išvedimo įrenginiais] \ 
 Virtuali mašina tiesiogiai su įvedimo/išvedimo įrenginiais nebendrauja.
-Duomenų perdavimui naudojamos komandos $GDxy$ ir $PDxy$. Failo numeris
-nurodomas registre $R1$, o $xy$ nurodo virtualios atminties bloko adresą.
+Duomenų perdavimui naudojamos komandos GDxy ir PDxy. Failo numeris
+nurodomas registre R1, o xy nurodo virtualios atminties bloko adresą.
 
-Vykdant komandą $GDxy$ suformuojamas supervizorinis pertraukimas
-$SI=1$, o vykdant $PDxy$ -- $SI=2$. Gavusi pertraukimą operacinė sistema
+Vykdant komandą GDxy suformuojamas supervizorinis pertraukimas
+SI=1, o vykdant PDxy -- SI=2. Gavusi pertraukimą operacinė sistema
 perjungia procesorių į supervizoriaus režimą ir, naudodama kanalų
 įrenginį, atlieka duomenų perdavimą.
 
-Komanda $GDxy$ nuskaito duomenų bloką iš failo į virtualios mašinos
-atmintį, o $PDxy$ perduoda virtualios mašinos atminties bloką į failą.
+Komanda GDxy nuskaito duomenų bloką iš failo į virtualios mašinos
+atmintį, o PDxy perduoda virtualios mašinos atminties bloką į failą.
 Baigus įvedimo/išvedimo operaciją, valdymas grąžinamas virtualiai mašinai.
-\end{description}
 
-\pagebreak
+Komandos INxy ir OUxy nuskaito duomenis iš klaviatūros ir išveda į ekraną.
+\end{description}
 
 \begin{description}
 \item[Virtualios mašinos interpretuojamojo vykdomojo failo išeities 
@@ -118,13 +121,12 @@ jei komandai reikalingas operandas, jo reikšmė. Atminties adresai ir
 konstantos nurodomi šešioliktainiais skaičiais.
 
 Programos komandos įkeliamos į virtualios mašinos kodo sritį, o pradinės
-duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje $IC$
+duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje IC
 registras nurodo pirmosios vykdomos komandos adresą.
 \end{description}
 
 \begin{description}
-    \item[Loginių komponentų sąryšis su realios mašinos techninės įrangos komponentais]
-
+\item[Loginių komponentų sąryšis su realios mašinos techninės įrangos komponentais] \ 
 Virtuali mašina savo komandų vykdymui naudoja realios mašinos procesorių.
 Vienintelis skirtumas yra tai, kad jai neleidžiama pasiekti, kai kurių
 jai nereikalingų registrų. Taip pat virtuali mašina mato tik jai skirtą
