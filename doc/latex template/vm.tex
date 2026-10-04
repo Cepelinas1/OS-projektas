@@ -37,7 +37,7 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
         \item[C2xy] - į registrą R2 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R2:= xy$
         
         \item[A1xy] prie registro R1 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 + [x*16 + y]$.
-        \item[A2xy] prie registro R2 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= [x*16 + y]$.
+        \item[A2xy] prie registro R2 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= R2 + [x*16 + y]$.
         
         \item[ADD1] prie registro R1 reikšmės pridedama registro R2 reikšmė. Formuoja SF požymius.Trumpiau $R1:= R1 + R2$.
         \item[ADD2] prie registro R2 reikšmės pridedama registro R1 reikšmė. Formuoja SF požymius.Trumpiau $R2:= R1 + R2$.
@@ -69,13 +69,13 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
         \item[JCxy] jei CF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
         \item[JOxy] jei OF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
 
-        \item[PDxy] blokas atmintyje su adresu xy rašomas į failą, kurio numeris registre R1.
-        \item[GDxy] iš failo, kurio numeris registre R1, rašomas blokas į atmintį adresu xy.
+        \item[PDxy] blokas atmintyje su adresu xy rašomas į failą, kurio numeris registre R1. Po operacijos failo pozicija padidinama vienu bloku.
+        \item[GDxy] iš failo, kurio numeris registre R1, rašomas blokas į atmintį adresu xy. Po operacijos failo pozicija padidinama vienu bloku.
         \item[FMxy] pozicija faile nustatoma į adresą xy.
         
         \item[FOxy] atidaromas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius). Failo numeris išsaugomas R1.
         \item[FCLR] uždaromas failas, kurio numeris registre R1.
-        \item[FDxy] ištrinamas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius). Failo numeris išsaugomas R1.
+        \item[FDxy] ištrinamas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius).
         \item[FDLR] ištrinamas failas, kurio numeris registre R1.
 
         \item[HALT] baigia vykdyti programą.
@@ -90,7 +90,8 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
     \end{description}
 \end{description}
 
-\subsection{Virtualios mašinos bendravimo su įvedimo/išvedimo įrenginiais mechanizmo aprašymas}
+\begin{description}
+\item[Virtualios mašinos bendravimas su įvedimo/išvedimo įrenginiais]
 Virtuali mašina tiesiogiai su įvedimo/išvedimo įrenginiais nebendrauja.
 Duomenų perdavimui naudojamos komandos $GDxy$ ir $PDxy$. Failo numeris
 nurodomas registre $R1$, o $xy$ nurodo virtualios atminties bloko adresą.
@@ -103,9 +104,13 @@ perjungia procesorių į supervizoriaus režimą ir, naudodama kanalų
 Komanda $GDxy$ nuskaito duomenų bloką iš failo į virtualios mašinos
 atmintį, o $PDxy$ perduoda virtualios mašinos atminties bloką į failą.
 Baigus įvedimo/išvedimo operaciją, valdymas grąžinamas virtualiai mašinai.
+\end{description}
 
-\subsection{Virtualios mašinos interpretuojamojo vykdomojo failo išeities 
-teksto formatas}
+\pagebreak
+
+\begin{description}
+\item[Virtualios mašinos interpretuojamojo vykdomojo failo išeities 
+teksto formatas] \ 
 
 Virtualios mašinos programą sudaro komandų ir duomenų dalys. Kiekviena
 komanda rašoma atskiroje eilutėje. Komandą sudaro operacijos kodas ir,
@@ -115,18 +120,19 @@ konstantos nurodomi šešioliktainiais skaičiais.
 Programos komandos įkeliamos į virtualios mašinos kodo sritį, o pradinės
 duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje $IC$
 registras nurodo pirmosios vykdomos komandos adresą.
+\end{description}
 
-\subsection{Modeliuojamos virtualios mašinos loginių komponentų sąryšio su 
-realios mašinos techninės įrangos komponentais aprašymas}
+\begin{description}
+    \item[Loginių komponentų sąryšis su realios mašinos techninės įrangos komponentais]
 
 Virtuali mašina savo komandų vykdymui naudoja realios mašinos procesorių.
 Vienintelis skirtumas yra tai, kad jai neleidžiama pasiekti, kai kurių
 jai nereikalingų registrų. Taip pat virtuali mašina mato tik jai skirtą
 visos naudotojo atminties dalį bei gali pasiekti tik tuos failus, kurie
 yra jai paskirti.
+\end{description}
 
 \section{Virtuali mašina operacinės sistemos kontekste}
-
 Virtuali mašina yra mašina skirta baigtinių naudotojo programų vykdymui. Ji
 yra supaprastintas, tuo pačiu ir apribotas realios mašinos modelis. 
 Operacinės sistemos paskirtis yra pasirūpinti virtualių mašinų inicijavimu,
