@@ -1,0 +1,46 @@
+\section{Pavyzdinės programos}
+
+\subsection{Amžinas ciklas}
+
+\begin{verbatim}
+    01 ; Pirmos instrukcijos žodis
+    JP 01 ; Grįžtam į pirmą instrukciją
+\end{verbatim}
+
+\subsection{Įvestis/išvestis}
+
+\begin{verbatim}
+    03 ; Pirmos instrukcijos žodis
+    00000001 00000000 ; Nustatome 2 žodžius su duomenimis 
+          ; (simbolių sk. ir vienas žodis saugoti gautai raikšmei) 
+    LD 01 ; Į R1 įkeliame simbolių skaičių
+    IN 02 ; Skaitome simbolį ir įrašome į atmintį adresu 02
+    SWAP ; Apkeičiame R1 ir R2
+    LD 02 ; Į R1 įkeliame nuskaitytą simbolį
+    ADDR ; Sudedame registrus (simbolį padidiname vienetu)
+    ST 02 ; Išsaugome suskaičiuotą reikšmę
+    LD 01 ; Į R1 įkeliame simbolių skaičių
+    OU 02 ; Spausdiname ekrane
+    HALT ; Baigiame programą
+\end{verbatim}
+
+\subsection{Failų skaitymas/įrašymas}
+\begin{verbatim}
+    0?
+    FOxy ; atidaromas
+    SWAP
+    LDxy
+    SWAP
+    GDxy
+    SWAP
+    OUxy
+    SWAP
+    FCLR
+    HALT
+    
+    FCLR ; uždaromas failas
+    FDLR ; ištrinimas
+    
+    HALT ; baigiama programa
+    ; 68 65 6c 6c 6f "hello"
+\end{verbatim}

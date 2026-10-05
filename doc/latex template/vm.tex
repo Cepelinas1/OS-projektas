@@ -18,8 +18,6 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
         \item[IC] - 2 baitų nuorodos registras. Skirtas nurodyti vykdomos virtualios mašinos komandos adresą atmintyje.
         \item[R1] - 4 baitų bendro naudojimo registras.
         \item[R2] - 4 baitų bendro naudojimo registras.
-        \item[ST] - 2 baitų rodyklė į steko segmentą atmintyje.
-        \item[SP] – 2 baitų registras, kuriame saugomas steko viršūnės žodžio indeksas.
         \item[SF] - 1 baitų loginis registras, saugomi aritmetinių ir loginių operacijų suformuoti požymiai. 
     \end{description}
 \end{description}
@@ -27,34 +25,18 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
 \begin{description}
     \item[Komandų sistema] \ 
     \begin{description}
-        \item[L1xy] - atminties ląstelės, kurios adresas xy (šešioliktainis skaičius) turinio kopijavimas į registrą R1. Trumpiau: $R1:= [x*16 + y]$
-        \item[L2xy] - atminties ląstelės, kurios adresas xy (šešioliktainis skaičius) turinio kopijavimas į registrą R2. Trumpiau: $R2:= [x*16 + y]$
+        \item[LDxy] - atminties ląstelės, kurios adresas xy (šešioliktainis skaičius) turinio kopijavimas į registrą R1. Trumpiau: $R1:= [x*16 + y]$
+        \item[SWAP] - Apkeičia R1 ir R2 reikšmes. Trumpiau: $R2:= R1, R1:= R2$
         
-        \item[K1xy] - registro R1 reikšmė įrašoma į atminties ląstelę, kurios adresas xy (šešioliktainis skaičius). Trumpiau $[x*16 + y]:= R1$ %K - keep
-        \item[K2xy] - registro R2 reikšmė įrašoma į atminties ląstelę, kurios adresas xy (šešioliktainis skaičius). Trumpiau $[x*16 + y]:= R2$
+        \item[STxy] - registro R1 reikšmė įrašoma į atminties ląstelę, kurios adresas xy (šešioliktainis skaičius). Trumpiau $[x*16 + y]:= R1$
         
-        \item[C1xy] - į registrą R1 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R1:= xy$
-        \item[C2xy] - į registrą R2 įrašoma į konstanta xy (šešioliktainis skaičius). Trumpiau $R2:= xy$
+        \item[ADDR] prie registro R1 reikšmės pridedama registro R2 reikšmė. Formuoja SF požymius. Trumpiau $R1:= R1 + R2$.
         
-        \item[A1xy] prie registro R1 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 + [x*16 + y]$.
-        \item[A2xy] prie registro R2 pridedama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= R2 + [x*16 + y]$.
-        
-        \item[ADD1] prie registro R1 reikšmės pridedama registro R2 reikšmė. Formuoja SF požymius.Trumpiau $R1:= R1 + R2$.
-        \item[ADD2] prie registro R2 reikšmės pridedama registro R1 reikšmė. Formuoja SF požymius.Trumpiau $R2:= R1 + R2$.
-        \item[ADxy] sudedamos registrų R1 ir R2 reikšmės bei rezultatas išsaugojamas atminties ląstelėje, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $[x*16 + y]:= R1 + R2$
-        
-        \item[S1xy] iš registro R1 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R1:= R1 - [x*16 + y]$.
-        \item[S2xy] iš registro R2 atimama reikšmė iš atminties ląstelės, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $R2:= R2 - [x*16 + y]$.
-        
-        \item[SUB1] iš registro R1 reikšmės atimama registro R2 reikšmė. Formuoja SF požymius. Trumpiau $R1:= R1 - R2$.
-        \item[SUB2] iš registro R2 reikšmės atimama registro R1 reikšmė. Formuoja SF požymius. Trumpiau $R2:= R2 - R1$.
+        \item[SUBR] iš registro R1 reikšmės atimama registro R2 reikšmė. Formuoja SF požymius. Trumpiau $R1:= R1 - R2$.
 
-        \item[MUL1] registro R1 reikšmė padauginama iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 * R2$.
-        \item[MUL2] registro R2 reikšmė padauginama iš registro R1 reiškmė. Formuoja SF požymius. Trumpiau $R2:= R1 * R2$.
-        \item[MLxy] sudauginamos registrų R1 ir R2 reikšmės bei rezultatas išsaugojamas atminties ląstelėje, kurios adresas xy (šešioliktainis skaičius). Formuoja SF požymius. Trumpiau $[x*16 + y]:= R1 * R2$
+        \item[MULR] registro R1 reikšmė padauginama iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 * R2$.
 
-        \item[DIV1] registro R1 reiškmė padalinima iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 / R2$.
-        \item[DIV2] registro R2 reiškmė padalinima iš registro R1 reikšmės. Formuoja SF požymius. Trumpiau $R2:= R2 / R1$.
+        \item[DIVR] registro R1 reiškmė padalinima iš registro R2 reikšmės. Formuoja SF požymius. Trumpiau $R1:= R1 / R2$.
 
         \item[COMP] Palygina registrus R1 ir R2. Formuoja SF požymius. ($R1 > R2$, tai ZF = 0 ir SF = 0; $R1 = R2$, tai ZF = 1; $R1 < R2$, tai ZF = 0 ir SF = 1)
 
@@ -69,22 +51,16 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
         \item[JCxy] jei CF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
         \item[JOxy] jei OF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
 
-        \item[PDxy] blokas atmintyje su adresu xy rašomas į failą, kurio numeris registre R1. Po operacijos failo pozicija padidinama vienu bloku.
-        \item[GDxy] iš failo, kurio numeris registre R1, rašomas blokas į atmintį adresu xy. Po operacijos failo pozicija padidinama vienu bloku.
-        \item[FMxy] pozicija faile nustatoma į adresą xy.
+        \item[PDxy] simbolių skaičius, nurodytas R2, atmintyje prasidedantis adresu xy rašomas į failą, kurio numeris registre R1. Po operacijos failo pozicija padidinama.
+        \item[GDxy] iš failo, kurio numeris registre R1, rašomas simbolių skaičius, nurodytas R2, į atmintį adresu xy. Po operacijos failo pozicija padidinama.
+        \item[FMOV] pozicija faile, kurio numeris registre R1, nustatoma į adresą registre R2.
         
         \item[FOxy] atidaromas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius). Failo numeris išsaugomas R1.
         \item[FCLR] uždaromas failas, kurio numeris registre R1.
-        \item[FDxy] ištrinamas failas, kurio pavadinimas prasideda adresu xy (šešioliktainis skaičius).
         \item[FDLR] ištrinamas failas, kurio numeris registre R1.
 
-        \item[INxy] iš įvedimo įrenginio nuskaitoma reikšmė ir įrašoma į atmintį adresu xy (šešioliktainis skaičius).
-        \item[OUxy] iš atminties adresu xy (šešioliktainis skaičius) paimama reikšmė ir išvedama į išvedimo įrenginį.
-
-        \item[PSH1] įrašo R1 reikšmę į steko viršūnę. Atnaujina SP.
-        \item[PSH2] įrašo R2 reikšmę į steko viršūnę. Atnaujina SP.
-        \item[POP1] steko viršūnės reikšmę įrašo į R1. Atnaujina SP.
-        \item[POP2] steko viršūnės reikšmę įrašo į R2. Atnaujina SP.
+        \item[INxy] iš įvedimo įrenginio nuskaitoma reikšmė ir įrašoma į atmintį adresu xy (šešioliktainis skaičius). Registre R1 nurodomas simbolių (baitų) skaičius.
+        \item[OUxy] iš atminties adresu xy (šešioliktainis skaičius) paimama reikšmė ir išvedama į išvedimo įrenginį. Registre R1 nurodomas simbolių (baitų) skaičius.
 
         \item[HALT] baigia vykdyti programą.
         
@@ -128,7 +104,7 @@ konstantos nurodomi šešioliktainiais skaičiais.
 
 Programos komandos įkeliamos į virtualios mašinos kodo sritį, o pradinės
 duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje IC
-registras nurodo pirmosios vykdomos komandos adresą.
+registras nurodo pirmosios vykdomos komandos adresą, t. y. pirmi du programos failo baitai nurodo pirmąją programos instrukciją (jos žodžio adresą).
 \end{description}
 
 \begin{description}

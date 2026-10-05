@@ -8,8 +8,6 @@
         \item[IC] - 2 baitų nuorodos registras. Skirtas nurodyti vykdomos virtualios mašinos komandos adresą atmintyje.
         \item[R1] - 4 baitų bendro naudojimo registras.
         \item[R2] - 4 baitų bendro naudojimo registras.
-        \item[ST] - 2 baitų rodyklė į steko segmentą atmintyje.
-        \item[SP] – 2 baitų registras, kuriame saugomas steko viršūnės žodžio indeksas.
         \item[SF] - 1 baitų loginis registras, saugomi aritmetinių ir loginių operacijų suformuoti požymiai.
             \begin{table}[H]
                 \centering
@@ -34,7 +32,6 @@
             \end{table}
         \item[MODE] - 1 baito loginis registras, kurio reikšmė nusako procesoriaus darbo rėžimą („N“ – naudotojas, „S“ – supervizorius).
         \item[PLR] - 2 baitų registras nurodyti puslapių lentelės bloko adresą.
-        \item[PLBR] - 2 baitų registras skirtas nurodyti puslapių lentelės pirmojo baito vietą PLR bloke.
         \item[PI] - 1 baito registras programiniams petraukiamams fiksuoti.
         \item[SI] - 1 baito registras supervizoriniams pertraukimams fiksuoti.
         \item[TI] - 1 baito taimerio registras.
@@ -60,8 +57,8 @@
 identifikaciją. Pertraukimą sistema turi aptikti ir atitinkamai sureaguoti. Kompiuterio būseną keičia tą būseną sukėlusi priežastis, pavyzdžiui, jei virtuali mašina vykdydama vartotojo programą sutinka neteisingą adresą ar operacijos kodą, tai komandų interpretatorius fiksuoja požymį “neteisingas adresas” (priskiria pertraukimo registrui tam tikrą reikšmę). Pertraukimus aptinka procesoriaus komanda test, kuri apklausia reikalingus registrus. Ir tik sistemai aptikus pertraukimą, yra nutraukiamas vartotojo programos vykdymas. Tai atliekama pasinaudojant pertraukimų vektorių lentele (kur yra nuorodos į pertraukimus apdorojančias programas). Valdymas yra perduodamas pertraukimą
 apdorosiančiai programai, kuri dažniausiai yra atmintyje su požymiu “tik skaitymui”. Įvykdžiusi savo darbą, pertraukimo apdorojimo programa valdymą gražina operacinei sistemai pertraukimo vietoje. Bus realizuoti trijų tipų pertraukimai – programiniai, supervizoriniai ir taimerio. Programinių pertraukimų registras yra PI, supervizorinių pertraukimų registras – SI, taimerio - TI. Programiniai pertraukimai kyla vykdant virtualią mašiną, bandant įvykdyti kokį nors neleistiną veiksmą arba nuskaičius neleistiną reikšmę. Supervizoriniai pertraukimai kyla virtualiai mašinai norint įvykdyti veiksmą, kuris gali vykti tik supervizoriaus režime. Pertraukimai gali būti aptikti tik vartotojo režime. Supervizoriniame režime centrinio procesoriaus darbo pertraukti negalima. Pertraukimai kils šiais būdais:
     \begin{description}
-    \item Operacijos GD, PD ir HALT iššauks supervizorinius pertraukimus. SI = 1 - komanda GD, SI = 2 - komanda PD, SI = 3 – komanda HALT.
-    \item Programiniai pertraukimai: PI = 1 – neteisingas adresas, PI = 2 – neteisingas operacijos kodas, PI = 3 – neteisingas priskyrimas, PI = 4 – perpildymas (overflow).
+    \item Operacijos GD, PD ir HALT iššauks supervizorinius pertraukimus. SI = 1 - komanda GD, SI = 2 - komanda PD, SI = 3 – komanda HALT, SI = 4 - komanda IN, SI = 5 - komanda OU. % verta paklaust dėl IN ir OU
+    \item Programiniai pertraukimai: PI = 1 – neteisingas adresas, PI = 2 – neteisingas operacijos kodas, PI = 3 – neteisingas priskyrimas, PI = 4 – dalyba iš 0.
     \item Esant TI = 0 bus fiksuojamas taimerio pertraukimas.
     \end{description}
 Esant situacijai SI = 0 ir PI = 0 ir TI <> 0, pertraukimų sistema neaptiks. Pertraukimai nustatomi paprasčiausiai virtualaus procesoriaus registrams priskiriant atitinkamas reikšmes (pavyzdžiui, komandų interpretatoriui vykdant komandą GD, jis priskiria SI:= 1) Kiekvieną kartą komandų interpretatoriui įvykdžius programą, kviečiama komanda test(), kuri apklausia registrus, ir, jei kilo pertraukimas, gražina informaciją apie tai. Komanda test() gali būti tokia:
@@ -75,8 +72,11 @@ Nustačius įvykusį pertraukimą (t.y. test() <> 0) virtualios mašinos proceso
 \item[Kanalų įrenginys] Kanalų įrenginio registrai:
     \begin{description}
     \item[SB] Takelio, iš kurio kopijuosime numeris.
-    \item[DB] Takelio, į kurį kopijuosime numeris
-    \item[ST] Objekto, iš kurio kopijuosime, numeris
+    \item[DB] Takelio, į kurį kopijuosime numeris.
+    \item[OF] Poslinkis, skaitymo/rašymo vietai rasti.
+    \item[SN] Skaitomų/rašomų simbolių skaičius.
+    \item[ID] failo ID.
+    \item[ST] Objekto, iš kurio kopijuosime, numeris.
         \begin{enumerate}
             \item Vartotojo atmintis;
             \item Supervizorinė atmintis;
@@ -106,7 +106,7 @@ registrus ir tada įvykdyti komandą XCHG.
 
 \begin{figure}[H]
         \centering
-        \includegraphics[width=1\linewidth]{doc/latex template/test7.drawio.png}
+        \includegraphics[width=1\linewidth]{doc/latex template/realusgrafikas.png}
         \caption{Reali masina}
         \label{fig:placeholder}
     \end{figure}
