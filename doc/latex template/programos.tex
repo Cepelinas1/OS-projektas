@@ -3,11 +3,12 @@
 \subsection{Amžinas ciklas}
 
 \begin{verbatim}
-    ; Programos duomenys šešioliktaine:
+    ; Duomenys apie failą šešioliktaine:
     494E4C4F4F50 4558 ; Failo pavadinimas ir failo tipas - INLOOP EX
     00000008 ; Failo dydis baitais
     00000000 ; Sekančio segmento adresas
     00000008 ; Dabartinio segmento dydis
+    
     00000000 ; Pirmos instrukcijos žodžio adresas
     
     ; Instrukcijos ASCII:
@@ -21,12 +22,15 @@ Visas programos failas šešioliktaine:
 \subsection{Įvestis/išvestis}
 
 \begin{verbatim}
-    ; Programos duomenys šešioliktaine:
+    ; Duomenys apie failą šešioliktaine:
     494E504F5554 4558 ; Failo pavadinimas ir failo tipas - INPOUT EX
     00000030 ; Failo dydis baitais
     00000000 ; Sekančio segmento adresas
     00000030 ; Dabartinio segmento dydis
+    
     00000002 ; Pirmos instrukcijos žodžio adresas
+
+    ; Programos duomenys šešioliktaine:
     00000001 00000000 ; Nustatome 2 žodžius su duomenimis 
                       ; (simbolių sk. ir vienas žodis saugoti gautai reikšmei)
                       
