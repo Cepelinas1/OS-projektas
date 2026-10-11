@@ -40,16 +40,16 @@ virtuali mašina pateikia supaprastintą atminties adresavimą.
 
         \item[COMP] Palygina registrus R1 ir R2. Formuoja SF požymius. ($R1 > R2$, tai ZF = 0 ir SF = 0; $R1 = R2$, tai ZF = 1; $R1 < R2$, tai ZF = 0 ir SF = 1)
 
-        \item[JPxy] valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+        \item[JPxy] valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius).
 
-        \item[J1xy] jei ZF = 1 (lygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
-        \item[J0xy] jei ZF = 0 (nelygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+        \item[J1xy] jei ZF = 1 (lygu), valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius). 
+        \item[J0xy] jei ZF = 0 (nelygu), valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius).
 
-        \item[JAxy] jei ZF = 0 ir SF = 0, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
-        \item[JBxy] jei SF = 1 (nelygu), valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+        \item[JAxy] jei ZF = 0 ir SF = 0, valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius). 
+        \item[JBxy] jei SF = 1 (nelygu), valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius).
 
-        \item[JCxy] jei CF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius). 
-        \item[JOxy] jei OF = 1, valdymas perduodamas kodo segmento komandai adresu xy (šešioliktainis skaičius).
+        \item[JCxy] jei CF = 1, valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius). 
+        \item[JOxy] jei OF = 1, valdymas perduodamas kodo segmento komandai virtualioje atmintyje adresu xy (šešioliktainis skaičius).
 
         \item[PDxy] simbolių skaičius, nurodytas R2, atmintyje prasidedantis adresu xy rašomas į failą, kurio numeris registre R1. Po operacijos failo pozicija padidinama.
         \item[GDxy] iš failo, kurio numeris registre R1, rašomas simbolių skaičius, nurodytas R2, į atmintį adresu xy. Po operacijos failo pozicija padidinama.
@@ -104,7 +104,7 @@ konstantos nurodomi šešioliktainiais skaičiais.
 
 Programos komandos įkeliamos į virtualios mašinos kodo sritį, o pradinės
 duomenų reikšmės -- į duomenų sritį. Programos vykdymo pradžioje IC
-registras nurodo pirmosios vykdomos komandos adresą, t. y. pirmi du programos failo baitai nurodo pirmąją programos instrukciją (jos žodžio adresą).
+registras nurodo pirmosios vykdomos komandos adresą, t. y. pirmo programos failo žodžio (po pavadinimo ir dydžio) 2 paskutiniai baitai nurodo pirmąją programos instrukciją (jos žodžio adresą).
 \end{description}
 
 \begin{description}
