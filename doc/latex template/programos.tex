@@ -6,6 +6,8 @@
     ; Programos duomenys šešioliktaine:
     494E4C4F4F50 4558 ; Failo pavadinimas ir failo tipas - INLOOP EX
     00000008 ; Failo dydis baitais
+    00000000 ; Sekančio segmento adresas
+    00000008 ; Dabartinio segmento dydis
     00000000 ; Pirmos instrukcijos žodžio adresas
     
     ; Instrukcijos ASCII:
@@ -14,7 +16,7 @@
 
 Visas programos failas šešioliktaine:
 
-49 4E 4C 4F 4F 50 45 58 00 00 00 08 00 00 00 00 4A 50 4F 4F
+49 4E 4C 4F 4F 50 45 58 00 00 00 08 00 00 00 00 00 00 00 08 00 00 00 00 4A 50 4F 4F
 
 \subsection{Įvestis/išvestis}
 
@@ -22,6 +24,8 @@ Visas programos failas šešioliktaine:
     ; Programos duomenys šešioliktaine:
     494E504F5554 4558 ; Failo pavadinimas ir failo tipas - INPOUT EX
     00000030 ; Failo dydis baitais
+    00000000 ; Sekančio segmento adresas
+    00000030 ; Dabartinio segmento dydis
     00000002 ; Pirmos instrukcijos žodžio adresas
     00000001 00000000 ; Nustatome 2 žodžius su duomenimis 
                       ; (simbolių sk. ir vienas žodis saugoti gautai reikšmei)
@@ -40,9 +44,9 @@ Visas programos failas šešioliktaine:
 
 Visas programos failas šešioliktaine:
 
-49 4E 50 4F 55 54 45 58 00 00 00 30 00 00 00 02 00 00 00 01 00 00 00 00 4C 44 30 30 49 4E 30 31 53 57 41 50 4C 44 30 31 41 44 44 52 53 54 30 31 4C 44 30 30 4F 55 30 31 48 41 4C 54
+49 4E 50 4F 55 54 45 58 00 00 00 30 00 00 00 00 00 00 00 30 00 00 00 02 00 00 00 01 00 00 00 00 4C 44 30 30 49 4E 30 31 53 57 41 50 4C 44 30 31 41 44 44 52 53 54 30 31 4C 44 30 30 4F 55 30 31 48 41 4C 54
 
-\subsection{Failų skaitymas/įrašymas}
+\subsection{Failų skaitymas/įrašymas (nebaigta)}
 \begin{verbatim}
     0?
     FOxy ; atidaromas
