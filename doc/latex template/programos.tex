@@ -24,22 +24,24 @@ Visas programos failas šešioliktaine:
 \begin{verbatim}
     ; Duomenys apie failą šešioliktaine:
     494E504F5554 4558 ; Failo pavadinimas ir failo tipas - INPOUT EX
-    00000030 ; Failo dydis baitais
+    0000003C ; Failo dydis baitais
     00000000 ; Sekančio segmento adresas
-    00000030 ; Dabartinio segmento dydis
+    0000003C ; Dabartinio segmento dydis
     
     00000002 ; Pirmos instrukcijos žodžio adresas
 
     ; Programos duomenys šešioliktaine:
-    00000001 00000000 ; Nustatome 2 žodžius su duomenimis 
-                      ; (simbolių sk. ir vienas žodis saugoti gautai reikšmei)
+    00000001 00000000 01000000 ; Nustatome 3 žodžius su duomenimis 
+                      ; (simbolių sk. ir vienas žodis saugoti gautai reikšmei + skaičius sudėčiai)
                       
     ; Instrukcijos ASCII:
     LD00 ; Į R1 įkeliame simbolių skaičių
     IN01 ; Skaitome simbolį ir įrašome į atmintį adresu 01
-    SWAP ; Apkeičiame R1 ir R2
     LD01 ; Į R1 įkeliame nuskaitytą simbolį
+    SWAP ; Apkeičiame R1 ir R2
+    LD02 ; Į R1 įkeliame skaičių sudėčiai
     ADDR ; Sudedame registrus (simbolį padidiname vienetu)
+    SWAP
     ST01 ; Išsaugome suskaičiuotą reikšmę
     LD00 ; Į R1 įkeliame simbolių skaičių
     OU01 ; Spausdiname ekrane
@@ -48,25 +50,53 @@ Visas programos failas šešioliktaine:
 
 Visas programos failas šešioliktaine:
 
-49 4E 50 4F 55 54 45 58 00 00 00 30 00 00 00 00 00 00 00 30 00 00 00 02 00 00 00 01 00 00 00 00 4C 44 30 30 49 4E 30 31 53 57 41 50 4C 44 30 31 41 44 44 52 53 54 30 31 4C 44 30 30 4F 55 30 31 48 41 4C 54
+49 4E 50 4F 55 54 45 58 00 00 00 3C 00 00 00 00 00 00 00 3C 00 00 00 02 00 00 00 01 00 00 00 00 01 00 00 00 4C 44 30 30 49 4E 30 31 4C 44 30 31 53 57 41 50 4C 44 30 32 41 44 44 52 53 57 41 50 53 54 30 31 4C 44 30 30 4F 55 30 31 48 41 4C 54
 
 \subsection{Failų skaitymas/įrašymas (nebaigta)}
 \begin{verbatim}
-    0?
-    FOxy ; atidaromas
-    SWAP
-    LDxy
-    SWAP
-    GDxy
-    SWAP
-    OUxy
-    SWAP
-    FCLR
-    HALT
+    ; Duomenų failas:
+    545854444154 5458 ; Failo pavadinimas ir failo tipas - TXTDAT TX
+    00000010 ; Failo dydis baitais
+    00000000 ; Sekančio segmento adresas
+    00000010 ; Dabartinio segmento dydis
+
+    ; Failo duomenys šešioliktaine:
+    00000000 00000000 00000000 00000000
+
+    ; Duomenys apie failą šešioliktaine:
+    465445535453 4558 ; Failo pavadinimas ir failo tipas - FTESTS EX
+    00000064 ; Failo dydis baitais
+    00000000 ; Sekančio segmento adresas
+    00000064 ; Dabartinio segmento dydis
     
-    FCLR ; uždaromas failas
-    FDLR ; ištrinimas
+    00000008 ; Pirmos instrukcijos žodžio adresas
+
+    ; Programos duomenys šešioliktaine:
+    54585444 41545458 00000000; Atidaromo failo pavadinimas ir žodis failo numeriui
+    68656C6C 6F000000 ; Žinutė, kurią rašysime į failą ("hello")
+    00000000 00000000 ; Kur rašysime skaitomus duomenis
+    00000005 ; Rašomų/skaitomų simbolių skaičius
+    ; Instrukcijos ASCII:
     
+    FO00 ; Atidaromas failas
+    ST02 ; Išsaugome failo numerį
+    LD07 ; Į R1 rašome rašomų simbolių skaičių
+    SWAP ; Apkeičiame R1 ir R2
+    LD02 ; Į R1 įsikeliame failo numerį
+    PD03 ; Rašome į failą
+    FCLR ; Uždarome failą
+    FO00 ; Atidaromas failas
+    ST02 ; Išsaugome failo numerį
+    LD07 ; Į R1 rašome skaitomų simbolių skaičių
+    SWAP ; Apkeičiame R1 ir R2
+    LD02 ; Į R1 įsikeliame failo numerį
+    GD05 ; iš failo rašome į atmintį
+    FCLR ; Uždarome failą
+    LD07 ; Į R1 rašome išvedamų simbolių skaičių
+    OU05 ; iš atminties išvedame į ekraną
     HALT ; baigiama programa
-    ; 68656c6c 6f000000 "hell o"
 \end{verbatim}
+
+Visas duomenų ir programos failas šešioliktaine:
+
+54 58 54 44 41 54 54 58 00 00 00 10 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 46 54 45 53 54 53 45 58 00 00 00 64 00 00 00 00 00 00 00 64 00 00 00 08 54 58 54 44 41 54 54 58 00 00 00 00 68 65 6C 6C 6F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 05 46 4F 30 30 53 54 30 32 4C 44 30 37 53 57 41 50 4C 44 30 32 50 44 30 33 46 43 4C 52 46 4F 30 30 53 54 30 32 4C 44 30 37 53 57 41 50 4C 44 30 32 47 44 30 35 46 43 4C 52 4C 44 30 37 4F 55 30 35 48 41 4C 54
