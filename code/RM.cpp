@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 using namespace std;
 
 class RAM{
@@ -9,6 +10,10 @@ class RAM{
 
     uint8_t getByte(uint16_t address){
         return memory[address];
+    }
+
+    uint8_t* getBytePtr(uint16_t address){
+        return &memory[address];
     }
 
     void setByte(uint16_t address, uint8_t byte){
@@ -54,7 +59,58 @@ class ChannelDevice{
                     : ram(ram), drive(drive), input(input), output(output){}
 
     void run(){
-
+        if(ST == USERMEM && DT == USERMEM){
+            // NOT USED
+        }
+        else if(ST == USERMEM && DT == SUPERVISORMEM){
+            // NOT USED
+        }
+        else if(ST == USERMEM && DT == DRIVE){
+            // TODO
+        }
+        else if(ST == USERMEM && DT == OUTPUT){
+            output.print(ram.getBytePtr(SB), SN);
+        }
+        else if(ST == SUPERVISORMEM && DT == USERMEM){
+            output.print(ram.getBytePtr(SB), SN);
+        }
+        else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
+            // NOT USED
+        }
+        else if(ST == SUPERVISORMEM && DT == DRIVE){
+            // NOT USED
+        }
+        else if(ST == SUPERVISORMEM && DT == OUTPUT){
+            // NOT USED
+        }
+        else if(ST == DRIVE && DT == USERMEM){
+            // TODO
+        }
+        else if(ST == DRIVE && DT == SUPERVISORMEM){
+            // TODO
+        }
+        else if(ST == DRIVE && DT == DRIVE){
+            // NOT USED
+        }
+        else if(ST == DRIVE && DT == OUTPUT){
+            // NOT USED
+        }
+        else if(ST == INPUT && DT == USERMEM){
+            for(int i = 0; i < SN; ++i){
+                ram.setByte(DB + i, input.readByte());
+            }
+        }
+        else if(ST == INPUT && DT == SUPERVISORMEM){
+            for(int i = 0; i < SN; ++i){
+                ram.setByte(DB + i, input.readByte());
+            }
+        }
+        else if(ST == INPUT && DT == DRIVE){
+            // NOT USED
+        }
+        else if(ST == INPUT && DT == OUTPUT){
+            // NOT USED
+        }
     }
 };
 
@@ -62,9 +118,21 @@ class HardDrive{
 };
 
 class Keyboard{
+    public:
+    uint8_t readByte(){
+        uint8_t result;
+        scanf("%1", result);
+        return result;
+    }
 };
 
 class Screen{
+    public:
+    void print(uint8_t *message, uint32_t length){
+        for(int i = 0; i < length; ++i){
+            cout << static_cast<char>(message[i]);
+        }
+    }
 };
 
 class CPU{
@@ -388,6 +456,16 @@ class CPU{
                     PI = 0;
                     SI = 0;
                     TI = R1;
+                }
+                IC += 4;
+                break;
+            }
+            case ('U' << 8) | 'S': { // USRM - set to user mode
+                if(MODE != SUPERVISOR){
+                    PI = BAD_INSTRUCTION;
+                }
+                else{
+                    MODE = USER;
                 }
                 IC += 4;
                 break;
