@@ -337,24 +337,24 @@ class CPU{
             case ('X' << 8) | 'C': { // XCHG - using the channel device
                 if(MODE != SUPERVISOR){
                     PI = BAD_INSTRUCTION;
-                    IC += 4;
                 }
                 else{
                     // TODO
                 }
+                IC += 4;
                 break;
             }
             // Undocumented ones
             case ('R' << 8) | 'S': { // RSTI - reset interrupt registers
                 if(MODE != SUPERVISOR){
                     PI = BAD_INSTRUCTION;
-                    IC += 4;
                 }
                 else{
                     PI = 0;
                     SI = 0;
                     TI = R1;
                 }
+                IC += 4;
                 break;
             }
             default:
