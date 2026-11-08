@@ -35,6 +35,27 @@ class RAM{
     }
 };
 
+class HardDrive{
+};
+
+class Keyboard{
+    public:
+    uint8_t readByte(){
+        uint8_t result;
+        scanf("%1c", &result);
+        return result;
+    }
+};
+
+class Screen{
+    public:
+    void print(uint8_t *message, uint32_t length){
+        for(int i = 0; i < length; ++i){
+            cout << static_cast<char>(message[i]);
+        }
+    }
+};
+
 class ChannelDevice{
     public:
     // Registers
@@ -72,7 +93,7 @@ class ChannelDevice{
             output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == SUPERVISORMEM && DT == USERMEM){
-            output.print(ram.getBytePtr(SB), SN);
+            // NOT USED
         }
         else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
             // NOT USED
@@ -81,7 +102,7 @@ class ChannelDevice{
             // NOT USED
         }
         else if(ST == SUPERVISORMEM && DT == OUTPUT){
-            // NOT USED
+            output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == DRIVE && DT == USERMEM){
             // TODO
@@ -114,29 +135,8 @@ class ChannelDevice{
     }
 };
 
-class HardDrive{
-};
-
-class Keyboard{
-    public:
-    uint8_t readByte(){
-        uint8_t result;
-        scanf("%1", result);
-        return result;
-    }
-};
-
-class Screen{
-    public:
-    void print(uint8_t *message, uint32_t length){
-        for(int i = 0; i < length; ++i){
-            cout << static_cast<char>(message[i]);
-        }
-    }
-};
-
 class CPU{
-    private:
+    public:
     // CPU registers
     uint16_t IC = 0;
     uint32_t R1 = 0;
@@ -161,12 +161,14 @@ class CPU{
 
     // Pointers to other components
     RAM &ram;
+    ChannelDevice &channelDevice;
 
     public:
     // Pointer to an interrupt handler
-    void (*interruptHandler)(uint8_t, uint8_t);
+    void (*interruptHandler)(uint8_t, uint8_t, uint16_t);
 
-    CPU(RAM &ram, void (*interruptHandler)(uint8_t, uint8_t)) : ram(ram), interruptHandler(interruptHandler){
+    CPU(RAM &ram, ChannelDevice &channelDevice, void (*interruptHandler)(uint8_t, uint8_t, uint16_t)) 
+            : ram(ram), channelDevice(channelDevice), interruptHandler(interruptHandler){
         MODE = SUPERVISOR;
     }
 
@@ -179,7 +181,7 @@ class CPU{
         SF &= ~(1 << flag);
     }
 
-        void clearFlags(){
+    void clearFlags(){
         clearFlag(CARRY);
         clearFlag(ZERO);
         clearFlag(SIGN);
@@ -200,7 +202,14 @@ class CPU{
     void testInterrupts(){
         if((PI + SI) > 0 || TI == 0){
             MODE = SUPERVISOR;
-            interruptHandler(PI, SI);
+            uint16_t address = 0;
+            if(SI == 4 || SI == 5){
+                uint16_t instructionAddress = getPagingAddress(IC - 4);
+                address = (ram.getByte(instructionAddress + 2) >= 'A' ? ram.getByte(instructionAddress + 2) - 'A' + 10 : ram.getByte(instructionAddress + 2) - '0') * 16
+                                    + (ram.getByte(instructionAddress + 3) >= 'A' ? ram.getByte(instructionAddress + 3) - 'A' + 10 : ram.getByte(instructionAddress + 3) - '0');
+                address = getPagingAddress(address);
+            }
+            interruptHandler(PI, SI, address);
         }
     }
 
@@ -298,6 +307,7 @@ class CPU{
 
                 if(R2 == 0){
                     PI = DIVISION_BY_0;
+                    IC += 4;
                     break;
                 }
                 else if((int32_t)R1 == INT32_MIN && (int32_t)R2 == -1){
@@ -411,30 +421,39 @@ class CPU{
             }
             case ('P' << 8) | 'D': // PDxy
                 SI = 2;
+                IC += 4;
                 break;
             case ('G' << 8) | 'D': // GDxy
                 SI = 1;
+                IC += 4;
                 break;
             case ('F' << 8) | 'M': // FMOV
                 SI = 9;
+                IC += 4;
                 break;
             case ('F' << 8) | 'O': // FOxy
                 SI = 6;
+                IC += 4;
                 break;
             case ('F' << 8) | 'C': // FCLR
                 SI = 7;
+                IC += 4;
                 break;
             case ('F' << 8) | 'D': // FDLR
                 SI = 8;
+                IC += 4;
                 break;
             case ('I' << 8) | 'N': // INxy
                 SI = 4;
+                IC += 4;
                 break;
             case ('O' << 8) | 'U': // OUxy
                 SI = 5;
+                IC += 4;
                 break;
             case ('H' << 8) | 'L': // HALT
                 SI = 3;
+                IC += 4;
                 break;
             // Extra supervisor mode instructions
             case ('X' << 8) | 'C': { // XCHG - using the channel device
@@ -442,7 +461,7 @@ class CPU{
                     PI = BAD_INSTRUCTION;
                 }
                 else{
-                    // TODO
+                    channelDevice.run();
                 }
                 IC += 4;
                 break;
@@ -478,5 +497,11 @@ class CPU{
 
         --TI;
         testInterrupts();
+    }
+
+    void run(){
+        uint32_t instructionWord = ram.getWord(getPagingAddress(IC));
+        uint8_t instruction[4] = {(instructionWord >> 24) & 0xFF, (instructionWord >> 16) & 0xFF, (instructionWord >> 8) & 0xFF, instructionWord & 0xFF};
+        executeInstruction(instruction);
     }
 };
