@@ -172,7 +172,7 @@ class HardDrive{
     uint32_t programStart(uint32_t id)
     {
         return readWord(files[id].startAddress + 20);
-    }
+    };
 };
 
 class Keyboard{
