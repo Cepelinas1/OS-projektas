@@ -196,9 +196,7 @@ class HardDrive{
 class Keyboard{
     public:
     uint8_t readByte(){
-        uint8_t result;
-        scanf("%1c", &result);
-        return result;
+        return getchar();
     }
 };
 
@@ -242,34 +240,34 @@ class ChannelDevice{
             // NOT USED
         }
         else if(ST == USERMEM && DT == DRIVE){
-            for(int i = 0; i < SN; ++i){
-                drive.writeByte(DB + i, input.readByte());
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, ram.getByte(SB + i));
             }
         }
         else if(ST == USERMEM && DT == OUTPUT){
             output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == SUPERVISORMEM && DT == USERMEM){
-            for(int i = 0; i < SN; ++i){
-                drive.writeByte(DB + i, input.readByte());
-            }
+            // NOT USED
         }
         else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
             // NOT USED
         }
         else if(ST == SUPERVISORMEM && DT == DRIVE){
-            // NOT USED
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, ram.getByte(SB + i));
+            }
         }
         else if(ST == SUPERVISORMEM && DT == OUTPUT){
             output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == DRIVE && DT == USERMEM){
-            for(int i = 0; i < SN; ++i){
+            for(uint32_t i = 0; i < SN; ++i){
                 ram.setByte(DB + i, drive.readByte(SB + i));
             }
         }
         else if(ST == DRIVE && DT == SUPERVISORMEM){
-            for(int i = 0; i < SN; ++i){
+            for(uint32_t i = 0; i < SN; ++i){
                 ram.setByte(DB + i, drive.readByte(SB + i));
             }
         }
@@ -280,17 +278,19 @@ class ChannelDevice{
             // NOT USED
         }
         else if(ST == INPUT && DT == USERMEM){
-            for(int i = 0; i < SN; ++i){
+            for(uint32_t i = 0; i < SN; ++i){
                 ram.setByte(DB + i, input.readByte());
             }
         }
         else if(ST == INPUT && DT == SUPERVISORMEM){
-            for(int i = 0; i < SN; ++i){
+            for(uint32_t i = 0; i < SN; ++i){
                 ram.setByte(DB + i, input.readByte());
             }
         }
         else if(ST == INPUT && DT == DRIVE){
-            // NOT USED
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, input.readByte());
+            }
         }
         else if(ST == INPUT && DT == OUTPUT){
             // NOT USED
@@ -357,8 +357,14 @@ class CPU{
 
     // Calculating real addresses
     uint16_t getPagingAddress(uint16_t virtualAddress){
-        uint16_t address = (ram.getByte(PLR + virtualAddress) << 8) | ram.getByte(PLR + virtualAddress + 1);
-        return address;
+        //uint16_t address = (ram.getByte(PLR + virtualAddress) << 8) | ram.getByte(PLR + virtualAddress + 1);
+        //return address;
+        uint16_t block = virtualAddress / 64;
+        uint16_t offset = virtualAddress % 64;
+
+        uint32_t physicalBlock = ram.getWord(PLR + block * 4);
+
+        return physicalBlock * 64 + offset;
     }
 
     // Searching for interrupts
@@ -614,7 +620,7 @@ class CPU{
                 SI = 5;
                 IC += 4;
                 break;
-            case ('H' << 8) | 'A': // HALT
+            case ('H' << 8) | 'L': // HALT
                 SI = 3;
                 IC += 4;
                 break;

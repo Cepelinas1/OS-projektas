@@ -1,11 +1,12 @@
 #include "RM.hpp"
+#include "VM.hpp"
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <random>
 using namespace std;
 
-void interruptHandler(uint8_t PI, uint8_t SI, uint16_t);
+void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address);
 
 RAM ram;
 Keyboard keyboard;
@@ -16,17 +17,6 @@ CPU cpu(ram, channelDevice, interruptHandler);
 
 bool halted = false;
 int inputCount = 0;
-
-void setPageTableEntry(uint16_t virtualAddress, uint16_t physicalAddress){
-    ram.setByte(cpu.PLR + virtualAddress, physicalAddress >> 8);
-    ram.setByte(cpu.PLR + virtualAddress + 1, physicalAddress & 0xFF);
-}
-
-void writeInstruction(uint16_t address, uint8_t instruction[4]){
-    for(int i = 0; i < 4; i++){
-        ram.setByte(address + i, instruction[i]);
-    }
-}
 
 uint32_t parseNumber(uint16_t address){
     uint32_t value = 0;
@@ -64,11 +54,9 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
         uint8_t instruction[4] = {'X', 'C', 'H', 'G'};
         cpu.executeInstruction(instruction);
 
-        // Convert the four ASCII digits into a binary integer.
         uint32_t value = parseNumber(address);
         ram.setWord(address, value);
 
-        // Consume the remaining newline.
         getchar();
 
         inputCount++;
@@ -77,7 +65,6 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
         uint32_t value = ram.getWord(address);
         string result = to_string(value);
 
-        // Convert the integer into ASCII characters.
         for(size_t i = 0; i < result.size(); i++){
             ram.setByte(address + i, result[i]);
         }
@@ -103,70 +90,38 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
 }
 
 int main(){
-     // Page table location.
-    cpu.PLR = 256;
+    uint16_t PLR = 256;
 
-    // Generate random physical addresses.
     vector<uint16_t> locations;
 
-    for(uint16_t i = 2048; i < 11000; i += 16){
-        locations.push_back(i);
+    for(uint16_t i = 2048; i < 11000; i += 64){
+        locations.push_back(i / 64);
     }
 
     mt19937 generator(random_device{}());
     shuffle(locations.begin(), locations.end(), generator);
 
-    // Virtual instruction addresses.
-    uint16_t instructionAddresses[] = {
-        0x00, 0x04, 0x08, 0x0C, 0x10,
-        0x14, 0x18, 0x1C, 0x20, 0x24
-    };
-
-    // Virtual data addresses.
-    uint16_t dataAddresses[] = {
-        0x40, 0x44, 0x48
-    };
-
-    // Assign random physical locations to instructions.
-    for(int i = 0; i < 10; i++){
-        setPageTableEntry(instructionAddresses[i], locations[i]);
+    // Assign physical blocks to the VM.
+    for(int i = 0; i < 16; i++){
+        ram.setWord(PLR + i * 4, locations[i]);
     }
 
-    // Assign random physical locations to data.
-    for(int i = 0; i < 3; i++){
-        setPageTableEntry(dataAddresses[i], locations[i + 10]);
-    }
-
-    // Program:
-    // IN40
-    // IN44
-    // LD40
-    // SWAP
-    // LD44
-    // SWAP
-    // ADDR
-    // ST48
-    // OU48
-    // HALT
-
-    uint8_t program[10][4] = {
-        {'I', 'N', '4', '0'},
-        {'I', 'N', '4', '4'},
-        {'L', 'D', '4', '0'},
-        {'S', 'W', 'A', 'P'},
-        {'L', 'D', '4', '4'},
-        {'S', 'W', 'A', 'P'},
-        {'A', 'D', 'D', 'R'},
-        {'S', 'T', '4', '8'},
-        {'O', 'U', '4', '8'},
-        {'H', 'L', 'T', '0'}
+    vector<uint32_t> program = {
+        0x494E3430, // IN40
+        0x494E3434, // IN44
+        0x4C443430, // LD40
+        0x53574150, // SWAP
+        0x4C443434, // LD44
+        0x53574150, // SWAP
+        0x41444452, // ADDR
+        0x53543438, // ST48
+        0x4F553438, // OU48
+        0x48414C54  // HALT
     };
 
-    for(int i = 0; i < 10; i++){
-        writeInstruction(locations[i], program[i]);
-    }
+    VirtualMachine vm(cpu, ram, PLR);
+    vm.loadProgram(program);
 
-    // Initialize CPU.
     cpu.IC = 0;
     cpu.R1 = 200;
     cpu.TI = 200;
@@ -174,16 +129,10 @@ int main(){
 
     cout << "PLR: " << cpu.PLR << endl;
 
-    cout << "\nInstruction mappings:" << endl;
-    for(int i = 0; i < 10; i++){
-        cout << hex << instructionAddresses[i]
-             << " -> " << locations[i] << endl;
-    }
-
-    cout << "\nData mappings:" << endl;
-    for(int i = 0; i < 3; i++){
-        cout << hex << dataAddresses[i]
-             << " -> " << locations[i + 10] << endl;
+    cout << "\nPhysical block mappings:" << endl;
+    for(int i = 0; i < 16; i++){
+        cout << "Virtual block " << i
+             << " -> Physical block " << locations[i] << endl;
     }
 
     cout << dec << "\nStarting program...\n\n";
