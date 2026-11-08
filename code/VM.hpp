@@ -30,19 +30,20 @@ class VirtualMachine {
     public:
     VirtualMachine(CPU &cpu, RAM &ram, uint16_t PLR) : cpu(cpu), ram(ram), PLR(PLR) {}
 
-    void loadProgram(const vector<uint32_t> &instructions){
+    void loadProgram(const vector<uint32_t> &file){
+        uint16_t entryPoint = file[0];
         uint16_t virtualAddress = 0;
 
-        for(const uint32_t &instruction : instructions){
+        for(size_t i = 1; i < file.size(); i++){
             uint16_t physicalAddress = translateAddress(virtualAddress);
 
-            ram.setWord(physicalAddress, instruction);
+            ram.setWord(physicalAddress, file[i]);
 
             virtualAddress += WORD_SIZE;
         }
 
         cpu.PLR = PLR;
-        cpu.IC = 0;
+        cpu.IC = entryPoint * WORD_SIZE;
 
         halted = false;
     }
@@ -51,9 +52,9 @@ class VirtualMachine {
         cpu.PLR = PLR;
         halted = false;
 
-        while(!halted){
+        //while(!halted){
             cpu.run();
-        }
+        //}
     }
 
     void stop(){

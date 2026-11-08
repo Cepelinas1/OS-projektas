@@ -3,6 +3,8 @@
 #include <cstdio>
 using namespace std;
 
+class CPU;
+
 class RAM{
     private:
     uint8_t memory[11264]; // Supervisor 1024 + user 10240, maybe needs to be separated
@@ -36,6 +38,7 @@ class RAM{
     }
 };
 
+
 class HardDrive{
     private:
     FILE* disk;
@@ -44,44 +47,77 @@ class HardDrive{
     uint32_t nextFreeAddress = 268;
     uint32_t fileCount = 0;
 
+    static constexpr uint32_t SEGMENT_SIZE = 256;
+    static constexpr uint32_t SEGMENT_HEADER = 4;
+    static constexpr uint32_t SEGMENT_TOTAL = 264;
+    static constexpr uint32_t END_MARKER = 0x24454E44;
+
     struct FileInfo{
         uint32_t name1;
         uint32_t name2;
         uint32_t startAddress;
-        uint32_t size;
     };
 
     FileInfo files[16];
+
+    uint32_t allocateSegment()
+    {
+        if(uint64_t(nextFreeAddress) + SEGMENT_TOTAL > diskSize){
+            return UINT32_MAX;
+        }
+
+        uint32_t address = nextFreeAddress;
+
+        writeWord(address, 0); // Next segment
+        writeWord(address + SEGMENT_HEADER, END_MARKER);
+
+        nextFreeAddress += SEGMENT_TOTAL;
+        writeWord(4, nextFreeAddress);
+
+        return address;
+    }
+
+    uint32_t findEnd(uint32_t address)
+    {
+        for(uint32_t i = 0; i <= SEGMENT_SIZE; ++i){
+            if(readWord(address + SEGMENT_HEADER + i) == END_MARKER){
+                return i;
+            }
+        }
+
+        return SEGMENT_SIZE;
+    }
 
     public:
     HardDrive()
     {
         disk = fopen("disk.bin", "r+b");
 
-        if(disk == nullptr) // jei nera failo
+        if(disk == nullptr)
         {
-            disk = fopen("disk.bin", "w+b"); // kuria faila
+            disk = fopen("disk.bin", "w+b");
 
             writeWord(0, diskSize);
             writeWord(4, nextFreeAddress);
             writeWord(8, fileCount);
         }
-        else // jei egzistuoja failas
+        else
         {
             diskSize = readWord(0);
             nextFreeAddress = readWord(4);
             fileCount = readWord(8);
 
-            for (uint32_t i = 0; i< fileCount; ++i)
+            for(uint32_t i = 0; i < fileCount; ++i)
             {
                 uint32_t address = 12 + i * 16;
+
                 files[i].name1 = readWord(address);
                 files[i].name2 = readWord(address + 4);
                 files[i].startAddress = readWord(address + 8);
-                files[i].size = readWord(address + 12);
             }
         }
     }
+
     ~HardDrive()
     {
         fclose(disk);
@@ -102,94 +138,197 @@ class HardDrive{
     uint32_t readWord(uint32_t address)
     {
         uint32_t value = 0;
-        for (int i= 0; i<4; ++i)
-        {
+
+        for(int i = 0; i < 4; ++i){
             value = (value << 8) | readByte(address + i);
         }
+
         return value;
     }
 
     void writeWord(uint32_t address, uint32_t value)
     {
-        for (int i = 0; i < 4; ++i)
-        {
+        for(int i = 0; i < 4; ++i){
             writeByte(address + i, (value >> (24 - i * 8)) & 0xFF);
         }
     }
 
-    uint32_t createFile(uint32_t name1, uint32_t name2, uint32_t size)
+    uint32_t createFile(uint32_t name1, uint32_t name2)
     {
-        if(fileCount >= 16){ // ar yra vietos
+        if(fileCount >= 16){
             return UINT32_MAX;
         }
 
-        if (uint64_t(nextFreeAddress) + 20 + size + 4 > diskSize){ // ar failas tilps i diska
+        uint32_t start = allocateSegment();
+
+        if(start == UINT32_MAX){
             return UINT32_MAX;
         }
-        
+
         uint32_t id = fileCount;
-        uint32_t start = nextFreeAddress;
 
-        writeWord(start, name1);
-        writeWord(start + 4, name2);
-        writeWord(start + 8, size);
-        writeWord(start + 12, 0);
-        writeWord(start + 16, size);
+        files[id] = {name1, name2, start};
 
-        for (uint32_t i = 0; i < size; ++i){
-            writeByte(start + 20 + i, 0);
-        }
-
-        writeWord(start + 20 + size, 0x24454E44); // $END (papildoma zyme)
-
-        files[id] = {name1, name2, start, size};
         uint32_t table = 12 + id * 16;
+
         writeWord(table, name1);
         writeWord(table + 4, name2);
         writeWord(table + 8, start);
-        writeWord(table + 12, size);
+        writeWord(table + 12, 0);
 
         fileCount++;
-        nextFreeAddress += 20 + size + 4;
-        writeWord(4, nextFreeAddress);
         writeWord(8, fileCount);
+
         fflush(disk);
         return id;
     }
 
     uint32_t openFile(uint32_t name1, uint32_t name2)
     {
-        for(uint32_t i=0; i < fileCount; ++i)
-        {
-            if(files[i].name1 == name1 && files[i].name2 == name2)
-                return i;
+    for(uint32_t i = 0; i < fileCount; ++i)
+    {
+        if(files[i].startAddress != 0 &&
+           files[i].name1 == name1 && files[i].name2 == name2){
+            return i;
         }
-        return UINT32_MAX;
+    }
+
+    return UINT32_MAX;
     }
 
     uint8_t readFileByte(uint32_t id, uint32_t offset)
     {
-        if (id >= fileCount || offset >= files[id].size)
-        {
+        if(id >= fileCount){
             return 0;
         }
 
-        return readByte(files[id].startAddress + 20 + offset);
+        uint32_t segment = files[id].startAddress;
+
+        while(offset >= SEGMENT_SIZE)
+        {
+            uint32_t next = readWord(segment);
+
+            if(next == 0){
+                return 0;
+            }
+
+            segment = next;
+            offset -= SEGMENT_SIZE;
+        }
+
+        uint32_t end = findEnd(segment);
+
+        if(offset >= end){
+            return 0;
+        }
+
+        return readByte(segment + SEGMENT_HEADER + offset);
     }
 
     void writeFileByte(uint32_t id, uint32_t offset, uint8_t value)
     {
-        if (id >= fileCount || offset >= files[id].size)
-        {
+        if(id >= fileCount){
             return;
         }
 
-        writeByte(files[id].startAddress + 20 + offset, value);
+        uint32_t segment = files[id].startAddress;
+
+        while(offset >= SEGMENT_SIZE)
+        {
+            uint32_t next = readWord(segment);
+
+            if(next == 0)
+            {
+                // Fill the remaining space before creating another segment
+                uint32_t end = findEnd(segment);
+
+                for(uint32_t i = end; i < SEGMENT_SIZE; ++i){
+                    writeByte(segment + SEGMENT_HEADER + i, 0);
+                }
+
+                writeWord(segment + SEGMENT_HEADER + SEGMENT_SIZE, END_MARKER);
+
+                next = allocateSegment();
+
+                if(next == UINT32_MAX){
+                    return;
+                }
+
+                writeWord(segment, next);
+            }
+
+            segment = next;
+            offset -= SEGMENT_SIZE;
+        }
+
+        uint32_t end = findEnd(segment);
+
+        // Fill gaps if writing beyond the current end
+        if(offset > end){
+            for(uint32_t i = end; i < offset; ++i){
+                writeByte(segment + SEGMENT_HEADER + i, 0);
+            }
+        }
+
+        writeByte(segment + SEGMENT_HEADER + offset, value);
+
+        // Move END only if we extended the file
+        if(offset >= end){
+            writeWord(segment + SEGMENT_HEADER + offset + 1, END_MARKER);
+        }
+
+        fflush(disk);
     }
 
     uint32_t programStart(uint32_t id)
     {
-        return readWord(files[id].startAddress + 20);
+        if(id >= fileCount){
+            return UINT32_MAX;
+        }
+
+        return (static_cast<uint32_t>(readFileByte(id, 0)) << 24) |
+               (static_cast<uint32_t>(readFileByte(id, 1)) << 16) |
+               (static_cast<uint32_t>(readFileByte(id, 2)) << 8) |
+                static_cast<uint32_t>(readFileByte(id, 3));
+    }
+
+    bool deleteFile(uint32_t id)
+    {
+    if(id >= fileCount || files[id].startAddress == 0){
+        return false;
+    }
+
+    uint32_t table = 12 + id * 16;
+
+    writeWord(table, 0);
+    writeWord(table + 4, 0);
+    writeWord(table + 8, 0);
+    writeWord(table + 12, 0);
+
+    files[id] = {0, 0, 0};
+
+    fflush(disk);
+    return true;
+    }
+
+    uint32_t getFileSize(uint32_t id)
+    {
+        if(id >= fileCount) return 0;
+
+        uint32_t segment = files[id].startAddress;
+        uint32_t size = 0;
+
+        while(segment != 0){
+            size += findEnd(segment);
+
+            uint32_t next = readWord(segment);
+            if(next == 0) break;
+
+            size += SEGMENT_SIZE;
+            segment = next;
+        }
+
+        return size;
     }
 };
 
@@ -228,74 +367,16 @@ class ChannelDevice{
     HardDrive &drive;
     Keyboard &input;
     Screen &output;
+    CPU* cpu = nullptr;
+
+    void setCPU(CPU& cpu){
+        this->cpu = &cpu;
+}
 
     ChannelDevice(RAM &ram, HardDrive &drive, Keyboard &input, Screen &output) 
                     : ram(ram), drive(drive), input(input), output(output){}
 
-    void run(){
-        if(ST == USERMEM && DT == USERMEM){
-            // NOT USED
-        }
-        else if(ST == USERMEM && DT == SUPERVISORMEM){
-            // NOT USED
-        }
-        else if(ST == USERMEM && DT == DRIVE){
-            for(uint32_t i = 0; i < SN; ++i){
-                drive.writeByte(DB + i, ram.getByte(SB + i));
-            }
-        }
-        else if(ST == USERMEM && DT == OUTPUT){
-            output.print(ram.getBytePtr(SB), SN);
-        }
-        else if(ST == SUPERVISORMEM && DT == USERMEM){
-            // NOT USED
-        }
-        else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
-            // NOT USED
-        }
-        else if(ST == SUPERVISORMEM && DT == DRIVE){
-            for(uint32_t i = 0; i < SN; ++i){
-                drive.writeByte(DB + i, ram.getByte(SB + i));
-            }
-        }
-        else if(ST == SUPERVISORMEM && DT == OUTPUT){
-            output.print(ram.getBytePtr(SB), SN);
-        }
-        else if(ST == DRIVE && DT == USERMEM){
-            for(uint32_t i = 0; i < SN; ++i){
-                ram.setByte(DB + i, drive.readByte(SB + i));
-            }
-        }
-        else if(ST == DRIVE && DT == SUPERVISORMEM){
-            for(uint32_t i = 0; i < SN; ++i){
-                ram.setByte(DB + i, drive.readByte(SB + i));
-            }
-        }
-        else if(ST == DRIVE && DT == DRIVE){
-            // NOT USED
-        }
-        else if(ST == DRIVE && DT == OUTPUT){
-            // NOT USED
-        }
-        else if(ST == INPUT && DT == USERMEM){
-            for(uint32_t i = 0; i < SN; ++i){
-                ram.setByte(DB + i, input.readByte());
-            }
-        }
-        else if(ST == INPUT && DT == SUPERVISORMEM){
-            for(uint32_t i = 0; i < SN; ++i){
-                ram.setByte(DB + i, input.readByte());
-            }
-        }
-        else if(ST == INPUT && DT == DRIVE){
-            for(uint32_t i = 0; i < SN; ++i){
-                drive.writeByte(DB + i, input.readByte());
-            }
-        }
-        else if(ST == INPUT && DT == OUTPUT){
-            // NOT USED
-        }
-    }
+    void run();
 };
 
 class CPU{
@@ -372,12 +453,19 @@ class CPU{
         if((PI + SI) > 0 || TI == 0){
             MODE = SUPERVISOR;
             uint16_t address = 0;
-            if(SI == 4 || SI == 5){
-                uint16_t instructionAddress = getPagingAddress(IC - 4);
-                address = (ram.getByte(instructionAddress + 2) >= 'A' ? ram.getByte(instructionAddress + 2) - 'A' + 10 : ram.getByte(instructionAddress + 2) - '0') * 16
-                                    + (ram.getByte(instructionAddress + 3) >= 'A' ? ram.getByte(instructionAddress + 3) - 'A' + 10 : ram.getByte(instructionAddress + 3) - '0');
-                address = getPagingAddress(address);
-            }
+            if(SI == GD || SI == PD || SI == IN || SI == OU || SI == OPEN_FILE){
+            uint16_t instructionAddress = getPagingAddress(IC - 4);
+
+            address = (ram.getByte(instructionAddress + 2) >= 'A' ?
+                       ram.getByte(instructionAddress + 2) - 'A' + 10 :
+                       ram.getByte(instructionAddress + 2) - '0') * 16;
+
+            address += (ram.getByte(instructionAddress + 3) >= 'A' ?
+                        ram.getByte(instructionAddress + 3) - 'A' + 10 :
+                        ram.getByte(instructionAddress + 3) - '0');
+            address *= 4;
+            }cout<< static_cast<int>(address) << " " << static_cast<int>(IC - 4) << " \n";
+            cout << hex << static_cast<long>(ram.getWord(getPagingAddress(address))) << "\n";
             interruptHandler(PI, SI, address);
         }
     }
@@ -388,7 +476,7 @@ class CPU{
             case ('L' << 8) | 'D': { // LDxy
                 uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                R1 = ram.getWord(getPagingAddress(address));
+                R1 = ram.getWord(getPagingAddress(address * 4));
                 IC += 4;
                 break;
             }
@@ -402,7 +490,7 @@ class CPU{
             case ('S' << 8) | 'T' : { // STxy
                 uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                ram.setWord(getPagingAddress(address), R1);
+                ram.setWord(getPagingAddress(address * 4), R1);
                 IC += 4;
                 break;
             }
@@ -519,14 +607,14 @@ class CPU{
             case ('J' << 8) | 'P': { // JPxy
                 uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                IC = ram.getWord(getPagingAddress(address));
+                IC = ram.getWord(getPagingAddress(address * 4));
                 break;
             }
             case ('J' << 8) | '1': { // J1xy
                 if(getFlag(ZERO)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -537,7 +625,7 @@ class CPU{
                 if(!getFlag(ZERO)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -548,7 +636,7 @@ class CPU{
                 if(!getFlag(ZERO) && !getFlag(SIGN)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -559,7 +647,7 @@ class CPU{
                 if(getFlag(SIGN)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -570,7 +658,7 @@ class CPU{
                 if(getFlag(CARRY)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -581,7 +669,7 @@ class CPU{
                 if(getFlag(OVERFLOW)){
                     uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
-                    IC = ram.getWord(getPagingAddress(address));
+                    IC = ram.getWord(getPagingAddress(address * 4));
                 }
                 else{
                     IC += 4;
@@ -671,6 +759,75 @@ class CPU{
     void run(){
         uint32_t instructionWord = ram.getWord(getPagingAddress(IC));
         uint8_t instruction[4] = {(instructionWord >> 24) & 0xFF, (instructionWord >> 16) & 0xFF, (instructionWord >> 8) & 0xFF, instructionWord & 0xFF};
+        for(int i = 0; i < 4; ++i){
+            cout << static_cast<char>(instruction[i]);
+        }cout<<"\n";
+        cout<< R1 << " " << R2 << "\n";
         executeInstruction(instruction);
     }
 };
+
+inline void ChannelDevice::run(){
+    if(ST == USERMEM && DT == USERMEM){
+            // NOT USED
+        }
+        else if(ST == USERMEM && DT == SUPERVISORMEM){
+            // NOT USED
+        }
+        else if(ST == USERMEM && DT == DRIVE){
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeFileByte(ID, OF + i, ram.getByte(cpu->getPagingAddress(SB + i)));
+            }
+        }
+        else if(ST == USERMEM && DT == OUTPUT){
+            output.print(ram.getBytePtr(SB), SN);
+        }
+        else if(ST == SUPERVISORMEM && DT == USERMEM){
+            // NOT USED
+        }
+        else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
+            // NOT USED
+        }
+        else if(ST == SUPERVISORMEM && DT == DRIVE){
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeFileByte(ID, OF + i, ram.getByte(SB + i));
+            }
+        }
+        else if(ST == SUPERVISORMEM && DT == OUTPUT){
+            output.print(ram.getBytePtr(SB), SN);
+        }
+        else if(ST == DRIVE && DT == USERMEM){
+            for(uint32_t i = 0; i < SN; ++i){
+                ram.setByte(cpu->getPagingAddress(DB + i), drive.readFileByte(ID, OF + i));
+            }
+        }
+        else if(ST == DRIVE && DT == SUPERVISORMEM){
+            for(uint32_t i = 0; i < SN; ++i){
+                ram.setByte(DB + i, drive.readFileByte(ID, OF + i));
+            }
+        }
+        else if(ST == DRIVE && DT == DRIVE){
+            // NOT USED
+        }
+        else if(ST == DRIVE && DT == OUTPUT){
+            // NOT USED
+        }
+        else if(ST == INPUT && DT == USERMEM){
+            for(uint32_t i = 0; i < SN; ++i){
+                ram.setByte(DB + i, input.readByte());
+            }
+        }
+        else if(ST == INPUT && DT == SUPERVISORMEM){
+            for(uint32_t i = 0; i < SN; ++i){
+                ram.setByte(DB + i, input.readByte());
+            }
+        }
+        else if(ST == INPUT && DT == DRIVE){
+            for(uint32_t i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, input.readByte());
+            }
+        }
+        else if(ST == INPUT && DT == OUTPUT){
+            // NOT USED
+        }
+}
