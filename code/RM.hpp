@@ -37,24 +37,23 @@ class RAM{
 };
 
 class HardDrive{
-private:
+    private:
     FILE* disk;
 
     uint32_t diskSize = 1024*1024;
     uint32_t nextFreeAddress = 268;
     uint32_t fileCount = 0;
 
-    struct FileInfo
-    {
+    struct FileInfo{
         uint32_t name1;
         uint32_t name2;
         uint32_t startAddress;
         uint32_t size;
     };
 
-    Fileinfo files[16];
+    FileInfo files[16];
 
-public:
+    public:
     HardDrive()
     {
         disk = fopen("disk.bin", "r+b");
@@ -75,10 +74,10 @@ public:
 
             for (uint32_t i = 0; i< fileCount; ++i)
             {
-                uint32_t address = 12 + i * 16
+                uint32_t address = 12 + i * 16;
                 files[i].name1 = readWord(address);
                 files[i].name2 = readWord(address + 4);
-                files[i].startAddress = readword(address + 8);
+                files[i].startAddress = readWord(address + 8);
                 files[i].size = readWord(address + 12);
             }
         }
@@ -87,8 +86,8 @@ public:
     {
         fclose(disk);
     }
-// ziuret kad neuzraso ant kitu
-    uint8_t readByte(unit32_t address)
+    // ziuret kad neuzraso ant kitu
+    uint8_t readByte(uint32_t address)
     {
         fseek(disk, address, SEEK_SET);
         return static_cast<uint8_t>(fgetc(disk));
@@ -129,8 +128,7 @@ public:
         writeWord(start + 12, 0);
         writeWord(start + 16, size);
 
-        for (uint32_t i = 0; i < size, ++i)
-        {
+        for (uint32_t i = 0; i < size; ++i){
             writeByte(start + 20 + i, 0);
         }
 
@@ -140,12 +138,11 @@ public:
         uint32_t table = 12 + id * 16;
         writeWord(table, name1);
         writeWord(table + 4, name2);
-        writeWord(table + 8, size);
-        writeWord(start + 12, 0); // segmento nera
-        writeWord(start + 16, size);
+        writeWord(table + 8, start);
+        writeWord(table + 12, size);
 
         fileCount++;
-        nextFreeAddress += 20 + size 4;
+        nextFreeAddress += 20 + size + 4;
         writeWord(4, nextFreeAddress);
         writeWord(8, fileCount);
         fflush(disk);
@@ -156,7 +153,7 @@ public:
     {
         for(uint32_t i=0; i < fileCount; ++i)
         {
-            if(file[i].name1 == name1 && files[i].name2 == name2)
+            if(files[i].name1 == name1 && files[i].name2 == name2)
                 return i;
         }
         return UINT32_MAX;
@@ -169,7 +166,7 @@ public:
 
     void writeFileByte(uint32_t id, uint32_t offset, uint8_t value)
     {
-        writeByte(file[id].startAddress + 20 + offset, value);
+        writeByte(files[id].startAddress + 20 + offset, value);
     }
 
     uint32_t programStart(uint32_t id)
@@ -227,13 +224,17 @@ class ChannelDevice{
             // NOT USED
         }
         else if(ST == USERMEM && DT == DRIVE){
-            // TODO
+            for(int i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, input.readByte());
+            }
         }
         else if(ST == USERMEM && DT == OUTPUT){
             output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == SUPERVISORMEM && DT == USERMEM){
-            // NOT USED
+            for(int i = 0; i < SN; ++i){
+                drive.writeByte(DB + i, input.readByte());
+            }
         }
         else if(ST == SUPERVISORMEM && DT == SUPERVISORMEM){
             // NOT USED
@@ -245,10 +246,14 @@ class ChannelDevice{
             output.print(ram.getBytePtr(SB), SN);
         }
         else if(ST == DRIVE && DT == USERMEM){
-            // TODO
+            for(int i = 0; i < SN; ++i){
+                ram.setByte(DB + i, drive.readByte(SB + i));
+            }
         }
         else if(ST == DRIVE && DT == SUPERVISORMEM){
-            // TODO
+            for(int i = 0; i < SN; ++i){
+                ram.setByte(DB + i, drive.readByte(SB + i));
+            }
         }
         else if(ST == DRIVE && DT == DRIVE){
             // NOT USED
@@ -591,7 +596,7 @@ class CPU{
                 SI = 5;
                 IC += 4;
                 break;
-            case ('H' << 8) | 'L': // HALT
+            case ('H' << 8) | 'A': // HALT
                 SI = 3;
                 IC += 4;
                 break;
