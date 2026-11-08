@@ -57,10 +57,13 @@ class CPU{
                 CHANGE_FILE_POINTER = 9};
 
     // Pointers to other components
-    RAM &ram; // Should be replaced by the channel device
+    RAM &ram;
 
     public:
-    CPU(RAM &ram) : ram(ram){
+    // Pointer to an interrupt handler
+    void (*interruptHandler)(uint8_t, uint8_t);
+
+    CPU(RAM &ram, void (*interruptHandler)(uint8_t, uint8_t)) : ram(ram), interruptHandler(interruptHandler){
         MODE = SUPERVISOR;
     }
 
@@ -91,7 +94,12 @@ class CPU{
     }
 
     // Searching for interrupts
-    void testInterrupts(){}
+    void testInterrupts(){
+        if((PI + SI) > 0 || TI == 0){
+            MODE = SUPERVISOR;
+            interruptHandler(PI, SI);
+        }
+    }
 
     // Executing instructions
     void executeInstruction(uint8_t instruction[4]){
@@ -100,18 +108,21 @@ class CPU{
                 uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
                 R1 = ram.getWord(getPagingAddress(address));
+                IC += 4;
                 break;
             }
             case ('S' << 8) | 'W' : { // SWAP
                 uint32_t temp = R1;
                 R1 = R2;
                 R2 = temp;
+                IC += 4;
                 break;
             }
             case ('S' << 8) | 'T' : { // STxy
                 uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
                                     + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
                 ram.setWord(getPagingAddress(address), R1);
+                IC += 4;
                 break;
             }
             case ('A' << 8) | 'D' : { // ADDR
@@ -132,6 +143,7 @@ class CPU{
                 if(~(oldR1 ^ R2) & (oldR1 ^ R1) & 0x80000000){
                     setFlag(OVERFLOW);
                 }
+                IC += 4;
                 break;
             }
             case ('S' << 8) | 'U' : { // SUBR
@@ -175,6 +187,7 @@ class CPU{
                 if(R1 & 0x80000000){
                     setFlag(SIGN);
                 }
+                IC += 4;
                 break;
             }
             case ('D' << 8) | 'I': { // DIVR
@@ -198,9 +211,10 @@ class CPU{
                 if(R1 & 0x80000000){
                     setFlag(SIGN);
                 }
+                IC += 4;
                 break;
             }
-            case ('C' << 8) | 'O': // COMP
+            case ('C' << 8) | 'O': { // COMP
                 clearFlags();
 
                 uint32_t temp = R1 -= R2;
@@ -217,46 +231,139 @@ class CPU{
                 if((R1 ^ R2) & (R1 ^ temp) & 0x80000000){
                     setFlag(OVERFLOW);
                 }
+                IC += 4;
                 break;
-            case ('J' << 8) | 'P': // JPxy
+            }
+            case ('J' << 8) | 'P': { // JPxy
+                uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                IC = ram.getWord(getPagingAddress(address));
                 break;
-            case ('J' << 8) | '1': // J1xy
+            }
+            case ('J' << 8) | '1': { // J1xy
+                if(getFlag(ZERO)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
-            case ('J' << 8) | '0': // J0xy
+            }
+            case ('J' << 8) | '0': { // J0xy
+                if(!getFlag(ZERO)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
-            case ('J' << 8) | 'A': // JAxy
+            }
+            case ('J' << 8) | 'A': { // JAxy
+                if(!getFlag(ZERO) && !getFlag(SIGN)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
-            case ('J' << 8) | 'B': // JBxy
+            }
+            case ('J' << 8) | 'B': { // JBxy
+                if(getFlag(SIGN)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
-            case ('J' << 8) | 'C': // JCxy
+            }
+            case ('J' << 8) | 'C': { // JCxy
+                if(getFlag(CARRY)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
-            case ('J' << 8) | 'O': // JOxy
+            }
+            case ('J' << 8) | 'O': { // JOxy
+                if(getFlag(OVERFLOW)){
+                    uint16_t address = (instruction[2] >= 'A' ? instruction[2] - 'A' + 10 : instruction[2] - '0') * 16 
+                                    + (instruction[3] >= 'A' ? instruction[3] - 'A' + 10 : instruction[3] - '0');
+                    IC = ram.getWord(getPagingAddress(address));
+                }
+                else{
+                    IC += 4;
+                }
                 break;
+            }
             case ('P' << 8) | 'D': // PDxy
+                SI = 2;
                 break;
             case ('G' << 8) | 'D': // GDxy
+                SI = 1;
                 break;
             case ('F' << 8) | 'M': // FMOV
+                SI = 9;
                 break;
             case ('F' << 8) | 'O': // FOxy
+                SI = 6;
                 break;
             case ('F' << 8) | 'C': // FCLR
+                SI = 7;
                 break;
             case ('F' << 8) | 'D': // FDLR
+                SI = 8;
                 break;
             case ('I' << 8) | 'N': // INxy
+                SI = 4;
                 break;
             case ('O' << 8) | 'U': // OUxy
+                SI = 5;
                 break;
             case ('H' << 8) | 'L': // HALT
+                SI = 3;
                 break;
+            // Extra supervisor mode instructions
+            case ('X' << 8) | 'C': { // XCHG - using the channel device
+                if(MODE != SUPERVISOR){
+                    PI = BAD_INSTRUCTION;
+                    IC += 4;
+                }
+                else{
+                    // TODO
+                }
+                break;
+            }
+            // Undocumented ones
+            case ('R' << 8) | 'S': { // RSTI - reset interrupt registers
+                if(MODE != SUPERVISOR){
+                    PI = BAD_INSTRUCTION;
+                    IC += 4;
+                }
+                else{
+                    PI = 0;
+                    SI = 0;
+                    TI = R1;
+                }
+                break;
+            }
             default:
                 PI = BAD_INSTRUCTION;
+                IC += 4;
                 break;
         }
 
         --TI;
         testInterrupts();
-        IC += 4;
     }
 };
