@@ -86,7 +86,7 @@ class HardDrive{
     {
         fclose(disk);
     }
-    // ziuret kad neuzraso ant kitu
+
     uint8_t readByte(uint32_t address)
     {
         fseek(disk, address, SEEK_SET);
@@ -119,6 +119,14 @@ class HardDrive{
 
     uint32_t createFile(uint32_t name1, uint32_t name2, uint32_t size)
     {
+        if(fileCount >= 16){ // ar yra vietos
+            return UINT32_MAX;
+        }
+
+        if (uint64_t(nextFreeAddress) + 20 + size + 4 > diskSize){ // ar failas tilps i diska
+            return UINT32_MAX;
+        }
+        
         uint32_t id = fileCount;
         uint32_t start = nextFreeAddress;
 
@@ -161,18 +169,28 @@ class HardDrive{
 
     uint8_t readFileByte(uint32_t id, uint32_t offset)
     {
+        if (id >= fileCount || offset >= files[id].size)
+        {
+            return 0;
+        }
+
         return readByte(files[id].startAddress + 20 + offset);
     }
 
     void writeFileByte(uint32_t id, uint32_t offset, uint8_t value)
     {
+        if (id >= fileCount || offset >= files[id].size)
+        {
+            return;
+        }
+
         writeByte(files[id].startAddress + 20 + offset, value);
     }
 
     uint32_t programStart(uint32_t id)
     {
         return readWord(files[id].startAddress + 20);
-    };
+    }
 };
 
 class Keyboard{
