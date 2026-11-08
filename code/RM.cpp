@@ -31,6 +31,31 @@ class RAM{
 };
 
 class ChannelDevice{
+    public:
+    // Registers
+    uint32_t SB = 0;
+    uint32_t DB = 0;
+    uint32_t OF = 0;
+    uint32_t SN = 0;
+    uint32_t ID = 0;
+    uint8_t ST = 0;
+    uint8_t DT = 0;
+
+    // ST/DT values
+    enum Devices {USERMEM = 1, SUPERVISORMEM = 2, DRIVE = 3, INPUT = 4, OUTPUT = 4};
+
+    // Pointers to devices
+    RAM &ram;
+    HardDrive &drive;
+    Keyboard &input;
+    Screen &output;
+
+    ChannelDevice(RAM &ram, HardDrive &drive, Keyboard &input, Screen &output) 
+                    : ram(ram), drive(drive), input(input), output(output){}
+
+    void run(){
+
+    }
 };
 
 class HardDrive{
