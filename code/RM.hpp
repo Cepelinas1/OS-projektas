@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <iostream>
+#include <cstdio>
 using namespace std;
 
 class RAM{
@@ -36,6 +37,145 @@ class RAM{
 };
 
 class HardDrive{
+private:
+    FILE* disk;
+
+    uint32_t diskSize = 1024*1024;
+    uint32_t nextFreeAddress = 268;
+    uint32_t fileCount = 0;
+
+    struct FileInfo
+    {
+        uint32_t name1;
+        uint32_t name2;
+        uint32_t startAddress;
+        uint32_t size;
+    };
+
+    Fileinfo files[16];
+
+public:
+    HardDrive()
+    {
+        disk = fopen("disk.bin", "r+b");
+
+        if(disk == nullptr) // jei nera failo
+        {
+            disk = fopen("disk.bin", "w+b"); // kuria faila
+
+            writeWord(0, diskSize);
+            writeWord(4, nextFreeAddress);
+            writeWord(8, fileCount);
+        }
+        else // jei egzistuoja failas
+        {
+            diskSize = readWord(0);
+            nextFreeAddress = readWord(4);
+            fileCount = readWord(8);
+
+            for (uint32_t i = 0; i< fileCount; ++i)
+            {
+                uint32_t address = 12 + i * 16
+                files[i].name1 = readWord(address);
+                files[i].name2 = readWord(address + 4);
+                files[i].startAddress = readword(address + 8);
+                files[i].size = readWord(address + 12);
+            }
+        }
+    }
+    ~HardDrive()
+    {
+        fclose(disk);
+    }
+// ziuret kad neuzraso ant kitu
+    uint8_t readByte(unit32_t address)
+    {
+        fseek(disk, address, SEEK_SET);
+        return static_cast<uint8_t>(fgetc(disk));
+    }
+
+    void writeByte(uint32_t address, uint8_t value)
+    {
+        fseek(disk, address, SEEK_SET);
+        fputc(value, disk);
+    }
+
+    uint32_t readWord(uint32_t address)
+    {
+        uint32_t value = 0;
+        for (int i= 0; i<4; ++i)
+        {
+            value = (value << 8) | readByte(address + i);
+        }
+        return value;
+    }
+
+    void writeWord(uint32_t address, uint32_t value)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            writeByte(address + i, (value >> (24 - i * 8)) & 0xFF);
+        }
+    }
+
+    uint32_t createFile(uint32_t name1, uint32_t name2, uint32_t size)
+    {
+        uint32_t id = fileCount;
+        uint32_t start = nextFreeAddress;
+
+        writeWord(start, name1);
+        writeWord(start + 4, name2);
+        writeWord(start + 8, size);
+        writeWord(start + 12, 0);
+        writeWord(start + 16, size);
+
+        for (uint32_t i = 0; i < size, ++i)
+        {
+            writeByte(start + 20 + i, 0);
+        }
+
+        writeWord(start + 20 + size, 0x24454E44); // $END (papildoma zyme)
+
+        files[id] = {name1, name2, start, size};
+        uint32_t table = 12 + id * 16;
+        writeWord(table, name1);
+        writeWord(table + 4, name2);
+        writeWord(table + 8, size);
+        writeWord(start + 12, 0); // segmento nera
+        writeWord(start + 16, size);
+
+        fileCount++;
+        nextFreeAddress += 20 + size 4;
+        writeWord(4, nextFreeAddress);
+        writeWord(8, fileCount);
+        fflush(disk);
+        return id;
+    }
+
+    uint32_t openFile(uint32_t name1, uint32_t name2)
+    {
+        for(uint32_t i=0; i < fileCount; ++i)
+        {
+            if(file[i].name1 == name1 && files[i].name2 == name2)
+                return i;
+        }
+        return UINT32_MAX;
+    }
+
+    uint8_t readFileByte(uint32_t id, uint32_t offset)
+    {
+        return readByte(files[id].startAddress + 20 + offset);
+    }
+
+    void writeFileByte(uint32_t id, uint32_t offset, uint8_t value)
+    {
+        writeByte(file[id].startAddress + 20 + offset, value);
+    }
+
+    uint32_t programStart(uint32_t id)
+    {
+        return readWord(files[id].startAddress + 20);
+    }
 };
 
 class Keyboard{
