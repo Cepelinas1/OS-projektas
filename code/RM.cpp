@@ -8,15 +8,25 @@ class RAM{
     public:
 
     uint8_t getByte(uint16_t address){
+        return memory[address];
     }
 
     void setByte(uint16_t address, uint8_t byte){
+        memory[address] = byte;
     }
 
     uint32_t getWord(uint16_t address){
+        return (static_cast<uint32_t>(memory[address]) << 24) |
+               (static_cast<uint32_t>(memory[address + 1]) << 16) |
+               (static_cast<uint32_t>(memory[address + 2]) << 8) |
+                static_cast<uint32_t>(memory[address + 3]);
     }
 
     void setWord(uint16_t address, uint32_t word){
+        memory[address] = (word >> 24) & 0xFF;
+        memory[address + 1] = (word >> 16) & 0xFF;
+        memory[address + 2] = (word >> 8) & 0xFF;
+        memory[address + 3] = word & 0xFF;
     }
 };
 
