@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <iomanip>
 using namespace std;
 
 void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address);
@@ -21,28 +22,11 @@ int inputCount = 0;
 bool openFiles[16] = {};
 uint32_t filePositions[16] = {};
 
-
-uint32_t parseNumber(uint16_t address){
-    uint32_t value = 0;
-
-    for(int i = 0; i < 4; i++){
-        uint8_t digit = ram.getByte(address + i);
-
-        if(digit < '0' || digit > '9'){
-            return 0;
-        }
-
-        value = value * 10 + digit - '0';
-    }
-
-    return value;
-}
-
 void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
     uint16_t savedIC = cpu.IC;
     uint8_t savedMode = cpu.MODE;
 
-    cout<< "got interrupt" << static_cast<int>(PI) << " " << static_cast<int>(SI) << "\n";
+    cout<< "GOT INTERRUPT :^O --> " << static_cast<int>(PI) << " " << static_cast<int>(SI) << "\n";
 
     uint32_t savedR1 = cpu.R1;
 
@@ -53,30 +37,28 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
     cpu.R1 = savedR1;
 
     if(PI != 0){
-        cout << "\nProgram interrupt: ";
-
+        cout << "\nPI: ";
         switch(PI){
             case CPU::BAD_ADDRESS:
                 cout << "Invalid memory address";
+                halted = true;
                 break;
             case CPU::BAD_INSTRUCTION:
                 cout << "Invalid instruction";
+                halted = true;
                 break;
             case CPU::BAD_ASSIGNMENT:
                 cout << "Invalid assignment";
+                halted = true;
                 break;
             case CPU::DIVISION_BY_0:
                 cout << "Division by zero";
-                break;
-            default:
-                cout << "Unknown program interrupt";
+                halted = true;
                 break;
         }
-
         cout << endl;
-        halted = true;
     }
-    else if(SI == CPU::GD){ // Read from file
+    else if(SI == CPU::GD){ // GDxy
         uint32_t id = cpu.R1;
         uint32_t length = cpu.R2;
 
@@ -98,7 +80,7 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
             filePositions[id] += length;
         }
     }
-    else if(SI == CPU::PD){ // Write to file
+    else if(SI == CPU::PD){ // PDxy
         uint32_t id = cpu.R1;
         uint32_t length = cpu.R2; cout << hex << static_cast<long>(id) << " " << static_cast<long>(length) << "\n";
 
@@ -123,38 +105,26 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
     else if(SI == CPU::HALT){
         halted = true;
     }
-    else if(SI == CPU::IN){ // Input
-        cout << (inputCount == 0 ? "Enter first number (4 digits): "
-                                 : "Enter second number (4 digits): ") << flush;
+    else if(SI == CPU::IN){ // INxy
+
+        cout << "WRITE INPUT (" << static_cast<long>(cpu.R1) << " symbols): ";
 
         channelDevice.ST = ChannelDevice::INPUT;
         channelDevice.DT = ChannelDevice::USERMEM;
-        channelDevice.DB = address;
-        channelDevice.SN = 4;
+        channelDevice.DB = cpu.getPagingAddress(address);
+        channelDevice.SN = cpu.R1;
 
         uint8_t instruction[4] = {'X', 'C', 'H', 'G'};
         cpu.executeInstruction(instruction);
-
-        uint32_t value = parseNumber(address);
-        ram.setWord(address, value);
-
-        getchar();
-        inputCount++;
     }
-    else if(SI == CPU::OU){ // Output
-        uint32_t value = ram.getWord(address);
-        string result = to_string(value);
+    else if(SI == CPU::OU){ // OUxy
 
-        for(size_t i = 0; i < result.size(); i++){
-            ram.setByte(address + i, result[i]);
-        }
-
-        cout << "Output: ";
+        cout << "OUTPUT: ";
 
         channelDevice.ST = ChannelDevice::USERMEM;
         channelDevice.DT = ChannelDevice::OUTPUT;
-        channelDevice.SB = address;
-        channelDevice.SN = result.size();
+        channelDevice.SB = cpu.getPagingAddress(address);
+        channelDevice.SN = cpu.R1;
 
         uint8_t instruction[4] = {'X', 'C', 'H', 'G'};
         cpu.executeInstruction(instruction);
@@ -209,80 +179,107 @@ void interruptHandler(uint8_t PI, uint8_t SI, uint16_t address){
             cout << "File is not open." << endl;
         }
     }
+    else if(cpu.TI == 0){
+        cpu.TI = 10;
+    }
 
     cpu.IC = savedIC;
-    cpu.MODE = savedMode;
+    cpu.MODE = CPU::USER;
 }
 
 int main(){
     channelDevice.setCPU(cpu);
-    uint16_t PLR = 256;
 
-    vector<uint16_t> locations;
+    // Setting up the paging table
+    uint16_t PLR = 0;
 
-    for(uint16_t i = 2048; i < 11000; i += 64){
-        locations.push_back(i / 64);
+    vector<uint16_t> pagingTable;
+
+    for(uint16_t i = 1024; i < 11264; i += 64){
+        pagingTable.push_back(i / 64);
     }
 
     mt19937 generator(random_device{}());
-    shuffle(locations.begin(), locations.end(), generator);
+    shuffle(pagingTable.begin(), pagingTable.end(), generator);
 
-    // Assign physical blocks to the VM.
-    for(int i = 0; i < 16; i++){
-        ram.setWord(PLR + i * 4, locations[i]);
+    // Adding the paging table to memory
+    for(int i = 0; i < 16; ++i){
+        ram.setWord(PLR + i * 4, pagingTable[i]);
     }
 
-    // Open the executable file.
-    uint32_t name1 = 0x46544553; // FTES
-    uint32_t name2 = 0x54534558; // TSEX
+    // Load the program to memory
+    uint32_t name1 = 0x494E504F; // INPO
+    uint32_t name2 = 0x55544558; // UTEX
 
-    int fileID = hardDrive.openFile(name1, name2);
+    uint32_t fileID = hardDrive.openFile(name1, name2);
 
-    if(fileID < 0){
+    if(fileID == UINT32_MAX){
         cout << "Program file not found." << endl;
         return 1;
     }
 
-    // Read the file contents into 4-byte words.
+    // Read the file.
     vector<uint32_t> program;
     
     uint32_t size = hardDrive.getFileSize(fileID);
 
+    cout << "Loaded program:";
     for(uint32_t offset = 0; offset < size; offset += 4){
         uint32_t word = 0;
-
-        for(int i = 0; i < 4; i++){
+        for(int i = 0; i < 4; ++i){
             word = (word << 8) | hardDrive.readFileByte(fileID, offset + i);
         }
-
         cout << hex << word << " ";
         program.push_back(word);
     }
 
+    // Set up VM and CPU
     VirtualMachine vm(cpu, ram, PLR);
     vm.loadProgram(program);
 
-    cpu.R1 = 200;
-    cpu.TI = 200;
+    cpu.TI = 10;
     cpu.MODE = CPU::USER;
 
-    cout << "PLR: " << cpu.PLR << endl;
-
-    cout << "\nPhysical block mappings:" << endl;
+    cout << "\nPaging:\n";
     for(int i = 0; i < 16; i++){
-        cout << "Virtual block " << i
-             << " -> Physical block " << locations[i] << endl;
+        cout << dec << "Virtual memory block " << i << " is User memory block " << pagingTable[i] << "\n";
     }
 
-    cout << dec << "\nStarting program...\n\n";
+    cout << "STARTING PROGRAM :^)\n";
+    cout << "'a' to advance, 'm' to print memory\n";
 
-    while(!halted){
-        vm.run();
+    char input;
+    while(!halted && (input = getchar()) != EOF){
+        char c;
+        while((c = getchar()) != '\n' && c != EOF);
+        if(input == 'a'){
+            cout << "Current CPU register values:\n";
+            cout << hex << " R1:" << static_cast<long>(cpu.R1) << " R2:" << static_cast<long>(cpu.R2) << " IC:" << static_cast<long>(cpu.IC) << " SF:" << static_cast<long>(cpu.SF) << " MODE:" 
+                 << cpu.MODE << " PLR:" << static_cast<long>(cpu.PLR) << " PI:" << static_cast<long>(cpu.PI) << " SI:" << static_cast<long>(cpu.SI) 
+                 << " TI:" << static_cast<long>(cpu.TI) << "\n";
+
+            cout << " Executing instruction: ";
+            uint32_t instructionWord = ram.getWord(cpu.getPagingAddress(cpu.IC));
+            uint8_t instruction[4] = {(instructionWord >> 24) & 0xFF, (instructionWord >> 16) & 0xFF, (instructionWord >> 8) & 0xFF, instructionWord & 0xFF};
+            for(int i = 0; i < 4; ++i){
+                cout << static_cast<char>(instruction[i]);
+            }
+            cout<<"\n";
+            
+            vm.run();
+        }
+        else if(input == 'm'){
+            cout << hex << setfill('0');
+            for(uint32_t address = 0; address < 16 * 64; address += 4){
+                if(address % 64 == 0){
+                    cout << "\n" << setw(4) << address << ": ";
+                }
+                cout << setw(8) << ram.getWord(cpu.getPagingAddress(address)) << " ";
+            }
+            cout << dec << setfill(' ') << "\n";
+        }
     }
 
-    cout << "\nProgram halted." << endl;
-
-    cout << "R1: " << cpu.R1 << endl;
-    cout << "R2: " << cpu.R2 << endl;
+    cout << "\nPROGRAM HALTED >:^(";
 }
 

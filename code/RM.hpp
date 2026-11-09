@@ -50,7 +50,7 @@ class HardDrive{
     static constexpr uint32_t SEGMENT_SIZE = 256;
     static constexpr uint32_t SEGMENT_HEADER = 4;
     static constexpr uint32_t SEGMENT_TOTAL = 264;
-    static constexpr uint32_t END_MARKER = 0x24454E44;
+    static constexpr uint32_t END_MARKER = 0x24454E44; // $END
 
     struct FileInfo{
         uint32_t name1;
@@ -185,15 +185,15 @@ class HardDrive{
 
     uint32_t openFile(uint32_t name1, uint32_t name2)
     {
-    for(uint32_t i = 0; i < fileCount; ++i)
-    {
-        if(files[i].startAddress != 0 &&
-           files[i].name1 == name1 && files[i].name2 == name2){
-            return i;
+        for(uint32_t i = 0; i < fileCount; ++i)
+        {
+            if(files[i].startAddress != 0 &&
+            files[i].name1 == name1 && files[i].name2 == name2){
+                return i;
+            }
         }
-    }
 
-    return UINT32_MAX;
+        return UINT32_MAX;
     }
 
     uint8_t readFileByte(uint32_t id, uint32_t offset)
@@ -239,7 +239,6 @@ class HardDrive{
 
             if(next == 0)
             {
-                // Fill the remaining space before creating another segment
                 uint32_t end = findEnd(segment);
 
                 for(uint32_t i = end; i < SEGMENT_SIZE; ++i){
@@ -263,7 +262,6 @@ class HardDrive{
 
         uint32_t end = findEnd(segment);
 
-        // Fill gaps if writing beyond the current end
         if(offset > end){
             for(uint32_t i = end; i < offset; ++i){
                 writeByte(segment + SEGMENT_HEADER + i, 0);
@@ -272,7 +270,6 @@ class HardDrive{
 
         writeByte(segment + SEGMENT_HEADER + offset, value);
 
-        // Move END only if we extended the file
         if(offset >= end){
             writeWord(segment + SEGMENT_HEADER + offset + 1, END_MARKER);
         }
@@ -335,7 +332,10 @@ class HardDrive{
 class Keyboard{
     public:
     uint8_t readByte(){
-        return getchar();
+        uint8_t result = getchar();
+        uint8_t c;
+        while((c = getchar()) != '\n' && c != EOF);
+        return result;
     }
 };
 
@@ -395,7 +395,7 @@ class CPU{
     // SF FLAG NUMBERS
     enum Flags {CARRY, ZERO, SIGN, OVERFLOW};
     // CPU modes
-    enum Modes {USER = 'N', SUPERVISOR = 'S'};
+    enum Modes {USER = 'U', SUPERVISOR = 'S'};
     // Interupts
     enum PInts {BAD_ADDRESS = 1, BAD_INSTRUCTION = 2,
                 BAD_ASSIGNMENT = 3, DIVISION_BY_0 = 4};
@@ -464,8 +464,7 @@ class CPU{
                         ram.getByte(instructionAddress + 3) - 'A' + 10 :
                         ram.getByte(instructionAddress + 3) - '0');
             address *= 4;
-            }cout<< static_cast<int>(address) << " " << static_cast<int>(IC - 4) << " \n";
-            cout << hex << static_cast<long>(ram.getWord(getPagingAddress(address))) << "\n";
+            }
             interruptHandler(PI, SI, address);
         }
     }
@@ -708,7 +707,7 @@ class CPU{
                 SI = 5;
                 IC += 4;
                 break;
-            case ('H' << 8) | 'L': // HALT
+            case ('H' << 8) | 'A': // HALT
                 SI = 3;
                 IC += 4;
                 break;
@@ -759,10 +758,6 @@ class CPU{
     void run(){
         uint32_t instructionWord = ram.getWord(getPagingAddress(IC));
         uint8_t instruction[4] = {(instructionWord >> 24) & 0xFF, (instructionWord >> 16) & 0xFF, (instructionWord >> 8) & 0xFF, instructionWord & 0xFF};
-        for(int i = 0; i < 4; ++i){
-            cout << static_cast<char>(instruction[i]);
-        }cout<<"\n";
-        cout<< R1 << " " << R2 << "\n";
         executeInstruction(instruction);
     }
 };

@@ -50,11 +50,8 @@ class VirtualMachine {
 
     void run(){
         cpu.PLR = PLR;
-        halted = false;
 
-        //while(!halted){
-            cpu.run();
-        //}
+        cpu.run();
     }
 
     void stop(){
