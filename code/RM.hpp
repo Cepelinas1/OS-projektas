@@ -40,7 +40,7 @@ class RAM{
 
 
 class HardDrive{
-    private:
+    public:
     FILE* disk;
 
     uint32_t diskSize = 1024*1024;

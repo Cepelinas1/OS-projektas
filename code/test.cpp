@@ -193,18 +193,18 @@ int main(){
     // Setting up the paging table
     uint16_t PLR = 0;
 
-    vector<uint16_t> pagingTable;
+    vector<uint16_t> blockTable;
 
     for(uint16_t i = 1024; i < 11264; i += 64){
-        pagingTable.push_back(i / 64);
+        blockTable.push_back(i / 64);
     }
 
     mt19937 generator(random_device{}());
-    shuffle(pagingTable.begin(), pagingTable.end(), generator);
+    shuffle(blockTable.begin(), blockTable.end(), generator);
 
     // Adding the paging table to memory
     for(int i = 0; i < 16; ++i){
-        ram.setWord(PLR + i * 4, pagingTable[i]);
+        ram.setWord(PLR + i * 4, blockTable[i]);
     }
 
     // Load the program to memory
@@ -242,11 +242,11 @@ int main(){
 
     cout << "\nPaging:\n";
     for(int i = 0; i < 16; i++){
-        cout << dec << "Virtual memory block " << i << " is User memory block " << pagingTable[i] << "\n";
+        cout << dec << "Virtual memory block " << i << " is User memory block " << blockTable[i] << "\n";
     }
 
     cout << "STARTING PROGRAM :^)\n";
-    cout << "'a' to advance, 'm' to print memory\n";
+    cout << "'a' to advance, 'm' to print memory, 'r' to print all memory, 'c' to print channel device registers, 'd' to print hard drive information\n";
 
     char input;
     while(!halted && (input = getchar()) != EOF){
@@ -272,11 +272,36 @@ int main(){
             cout << hex << setfill('0');
             for(uint32_t address = 0; address < 16 * 64; address += 4){
                 if(address % 64 == 0){
-                    cout << "\n" << setw(4) << address << ": ";
+                    cout << "\n" << setw(4) << address / 64 << ": ";
                 }
                 cout << setw(8) << ram.getWord(cpu.getPagingAddress(address)) << " ";
             }
             cout << dec << setfill(' ') << "\n";
+        }
+        else if(input == 'r'){
+            cout << hex << setfill('0');
+            for(uint32_t address = 0; address < 176 * 64; address += 4){
+                if(address % 64 == 0){
+                    cout << "\n" << setw(4) << address / 64 << ": ";
+                }
+                cout << setw(8) << ram.getWord(address) << " ";
+            }
+            cout << dec << setfill(' ') << "\n";
+        }
+        else if(input == 'c'){
+            cout << "Current channel device register values:\n";
+            cout << hex << " SB:" << static_cast<long>(channelDevice.SB) << " DB:" << static_cast<long>(channelDevice.DB) << " OF:" << static_cast<long>(channelDevice.OF) 
+                 << " SN:" << static_cast<long>(channelDevice.SN) << " ID:" << static_cast<long>(channelDevice.ID) << " ST:" << static_cast<long>(channelDevice.ST) 
+                 << " DT:" << static_cast<long>(channelDevice.DT) << "\n";
+        }
+        else if(input == 'd'){
+            cout << "Current hard drive status:\n";
+            cout << hex << " SIZE:" << static_cast<long>(hardDrive.diskSize) << " NEXT FREE ADDRESS:" << static_cast<long>(hardDrive.nextFreeAddress)
+                 << " FILE COUNT:" << static_cast<long>(hardDrive.fileCount) << "\n";
+            cout << "Files: \n";
+            for(int i = 0; i < hardDrive.fileCount; ++i){
+                cout << " NAME:" << static_cast<long>(hardDrive.files[i].name1) << static_cast<long>(hardDrive.files[i].name2) << " START:" << static_cast<long>(hardDrive.files[i].startAddress) << "\n";
+            }
         }
     }
 
